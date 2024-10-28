@@ -1,0 +1,8 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.LiveImages" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/liveimages_black</item>
+        <item name="android:statusBarColor">@color/liveimages_black</item>
+        <item name="android:navigationBarColor">@color/liveimages_black</item>
+    </style>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- palette -->
+    <color name="liveimages_black">#000000</color>
+    <color name="liveimages_white">#FFFFFF</color>
+    <color name="liveimages_green">#A8DB10</color>
+    <color name="liveimages_gray">#8B8B8B</color>
+    <color name="liveimages_red">#FF3D00</color>
+    <color name="liveimages_blue">#1976D2</color>
+</resources>
