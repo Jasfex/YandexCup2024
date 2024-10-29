@@ -1,12 +1,19 @@
 package ru.yandex.cup.live.images
 
-import android.graphics.Color
 import android.os.Bundle
-import androidx.activity.SystemBarStyle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import ru.yandex.cup.live.images.databinding.ActivityMainBinding
+import ru.yandex.cup.live.images.domain.instument.Brush
+import ru.yandex.cup.live.images.domain.instument.Circle
+import ru.yandex.cup.live.images.domain.instument.ColorPicker
+import ru.yandex.cup.live.images.domain.instument.Eraser
+import ru.yandex.cup.live.images.domain.instument.Figure
+import ru.yandex.cup.live.images.domain.instument.Instrument
+import ru.yandex.cup.live.images.domain.instument.Pencil
+import ru.yandex.cup.live.images.domain.instument.Square
+import ru.yandex.cup.live.images.domain.instument.Triangle
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,6 +27,20 @@ class MainActivity : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
+        }
+
+        val instrument: Instrument? = null
+        when (instrument) {
+            is Pencil -> TODO()
+            is Brush -> TODO()
+            is Eraser -> TODO()
+            is Figure -> when (instrument as Figure) {
+                is Circle -> TODO()
+                is Square -> TODO()
+                is Triangle -> TODO()
+            }
+            is ColorPicker -> TODO()
+            null -> TODO()
         }
 
         // binding.colorPicker.isSelected = true
