@@ -13,7 +13,7 @@
         android:layout_height="32dp"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="16dp"
-        app:layout_constraintBottom_toTopOf="@id/canvas"
+        app:layout_constraintBottom_toTopOf="@id/canvas_mask"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -109,7 +109,7 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ru.yandex.cup.live.images.view.RoundedCornersLayout
-        android:id="@+id/canvas"
+        android:id="@+id/canvas_mask"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginHorizontal="16dp"
@@ -121,10 +121,10 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/controls">
 
-        <FrameLayout
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:background="#24ff00" />
+        <ru.yandex.cup.live.images.view.Canvas
+            android:id="@+id/canvas"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
     </ru.yandex.cup.live.images.view.RoundedCornersLayout>
 
     <LinearLayout
@@ -135,7 +135,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/canvas">
+        app:layout_constraintTop_toBottomOf="@id/canvas_mask">
 
         <Button
             android:id="@+id/pencil"

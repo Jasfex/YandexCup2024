@@ -29,19 +29,19 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        val instrument: Instrument? = null
-        when (instrument) {
-            is Pencil -> TODO()
-            is Brush -> TODO()
-            is Eraser -> TODO()
-            is Figure -> when (instrument as Figure) {
-                is Circle -> TODO()
-                is Square -> TODO()
-                is Triangle -> TODO()
-            }
-            is ColorPicker -> TODO()
-            null -> TODO()
-        }
+        // val instrument: Instrument? = null
+        // when (instrument) {
+        //     is Pencil -> TODO()
+        //     is Brush -> TODO()
+        //     is Eraser -> TODO()
+        //     is Figure -> when (instrument as Figure) {
+        //         is Circle -> TODO()
+        //         is Square -> TODO()
+        //         is Triangle -> TODO()
+        //     }
+        //     is ColorPicker -> TODO()
+        //     null -> TODO()
+        // }
 
         // binding.colorPicker.isSelected = true
     }
