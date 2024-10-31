@@ -121,10 +121,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/controls">
 
-        <ru.yandex.cup.live.images.view.Canvas
+        <ru.yandex.cup.live.images.view.CanvasLayout
             android:id="@+id/canvas"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent" />
     </ru.yandex.cup.live.images.view.RoundedCornersLayout>
 
     <LinearLayout
@@ -178,4 +179,5 @@
             android:foreground="@drawable/liveimages_color_picker_foregound"
             app:backgroundTint="@color/liveimages_blue" />
     </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
