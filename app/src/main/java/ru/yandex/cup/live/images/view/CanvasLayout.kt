@@ -26,9 +26,6 @@ import ru.yandex.cup.live.images.domain.instument.Pencil
 import ru.yandex.cup.live.images.domain.instument.Square
 import ru.yandex.cup.live.images.domain.instument.Triangle
 
-/**
- * @author Сергей Стилик on 30.10.2024
- */
 class CanvasLayout(
     context: Context,
     attrs: AttributeSet?,
@@ -136,7 +133,9 @@ class CanvasLayout(
                 is Triangle -> TODO()
             }
             is ColorPicker -> TODO()
-            null -> TODO()
+            null -> {
+                Log.d(TAG, "setInstrument(): null")
+            }
         }
     }
 

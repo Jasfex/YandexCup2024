@@ -16,9 +16,6 @@ import com.google.android.material.shape.ShapeAppearanceModel
 import com.google.android.material.shape.ShapeAppearancePathProvider
 import ru.yandex.cup.live.images.R
 
-/**
- * @author Сергей Стилик on 28.10.2024
- */
 class RoundedCornersLayout(
     context: Context,
     attrs: AttributeSet?,
