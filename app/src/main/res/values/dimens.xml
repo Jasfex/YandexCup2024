@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="liveimages_canvas_radius">20dp</dimen>
+    <dimen name="liveimages_offset">16dp</dimen>
+    <dimen name="liveimages_stroke_width_seek_bar_width">192dp</dimen>
+    <dimen name="liveimages_stroke_width_seek_bar_height">20dp</dimen>
+    <dimen name="liveimages_stroke_width_seek_bar_thumb_size">20dp</dimen>
+    <dimen name="liveimages_stroke_width_seek_bar_thumb_offset">10dp</dimen>
 </resources>

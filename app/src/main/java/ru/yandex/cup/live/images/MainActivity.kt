@@ -4,18 +4,24 @@ import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.SeekBar
+import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnNextLayout
 import androidx.core.view.postDelayed
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import ru.yandex.cup.live.images.databinding.ActivityMainBinding
+import ru.yandex.cup.live.images.databinding.ViewStrokeWidthSeekBarBinding
 import ru.yandex.cup.live.images.domain.color.Color
 import ru.yandex.cup.live.images.domain.instument.Brush
 import ru.yandex.cup.live.images.domain.instument.Circle
@@ -27,6 +33,8 @@ import ru.yandex.cup.live.images.domain.instument.Pencil
 import ru.yandex.cup.live.images.domain.instument.Square
 import ru.yandex.cup.live.images.domain.instument.StrokeWidth
 import ru.yandex.cup.live.images.domain.instument.Triangle
+import ru.yandex.cup.live.images.domain.instument.toProgress
+import ru.yandex.cup.live.images.ui.ShowStrokeWidthSeekBar
 
 class MainActivity : AppCompatActivity() {
 
@@ -60,6 +68,11 @@ class MainActivity : AppCompatActivity() {
                     collectInstumentFlow()
                 }
             }
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    collectEventsFlow()
+                }
+            }
         }
     }
 
@@ -91,5 +104,60 @@ class MainActivity : AppCompatActivity() {
             binding.figures.isSelected = instrument is Figure
             binding.colorPicker.isSelected = instrument is ColorPicker
         }
+    }
+
+    private suspend fun collectEventsFlow() {
+        viewModel.eventsFlow.collect { event ->
+            when (event) {
+                is ShowStrokeWidthSeekBar -> {
+                    when (event.instrument) {
+                        is Pencil -> showStrokeWidthSeekBar(binding.pencil, event.instrument)
+                        is Brush -> showStrokeWidthSeekBar(binding.brush, event.instrument)
+                        is Eraser -> showStrokeWidthSeekBar(binding.eraser, event.instrument)
+                        is Figure -> when (event.instrument as Figure) {
+                            is Circle -> Unit
+                            is Square -> Unit
+                            is Triangle -> Unit
+                        }
+                        is ColorPicker -> Unit
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showStrokeWidthSeekBar(view: View, instrument: Instrument) {
+        binding.controlsPopup.removeAllViews()
+        val seekBar = ViewStrokeWidthSeekBarBinding.inflate(layoutInflater)
+        val seekBarWidth = resources.getDimensionPixelSize(R.dimen.liveimages_stroke_width_seek_bar_width)
+        val seekBarHeight = resources.getDimensionPixelSize(R.dimen.liveimages_stroke_width_seek_bar_height)
+        val sourceProgress = 100 - instrument.strokeWidth.toProgress()
+        seekBar.root.progress = sourceProgress
+
+        seekBar.root.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                viewModel.onStrokeWidthUpdated(instrument, 100 - progress)
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+
+        binding.controlsPopup.doOnNextLayout {
+            val offset = resources.getDimension(R.dimen.liveimages_offset)
+            binding.controlsPopup.translationY = view.y + binding.drawingInstruments.y - offset - binding.controlsPopup.height
+            binding.overlay.visibility = View.VISIBLE
+            binding.overlay.setOnClickListener {
+                binding.controlsPopup.removeAllViews()
+                binding.overlay.setOnClickListener(null)
+                binding.overlay.visibility = View.INVISIBLE
+            }
+        }
+        binding.controlsPopup.addView(seekBar.root, seekBarWidth, seekBarHeight)
+    }
+
+    companion object {
+        const val TAG = "MainActivity"
     }
 }

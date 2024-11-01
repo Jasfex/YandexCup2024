@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SeekBar xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/liveimages_stroke_width_seek_bar_width"
+    android:layout_height="@dimen/liveimages_stroke_width_seek_bar_height"
+    android:progressDrawable="@drawable/liveimages_track"
+    android:splitTrack="false"
+    android:thumb="@drawable/liveimages_thumb"
+    android:thumbOffset="@dimen/liveimages_stroke_width_seek_bar_thumb_offset" />

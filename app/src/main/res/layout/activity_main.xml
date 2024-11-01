@@ -180,4 +180,18 @@
             app:backgroundTint="@color/liveimages_blue" />
     </LinearLayout>
 
+    <FrameLayout
+        android:id="@+id/overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="invisible">
+
+        <FrameLayout
+            android:id="@+id/controls_popup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/liveimages_controls_background"
+            android:padding="16dp" />
+    </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
