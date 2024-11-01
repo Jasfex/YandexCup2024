@@ -132,7 +132,7 @@ class CanvasLayout(
                 is Square -> TODO()
                 is Triangle -> TODO()
             }
-            is ColorPicker -> TODO()
+            is ColorPicker -> Unit
             null -> {
                 Log.d(TAG, "setInstrument(): null")
             }

@@ -2,6 +2,7 @@ package ru.yandex.cup.live.images
 
 import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import ru.yandex.cup.live.images.databinding.ActivityMainBinding
+import ru.yandex.cup.live.images.databinding.ViewColorPickerPaletteBinding
 import ru.yandex.cup.live.images.databinding.ViewStrokeWidthSeekBarBinding
 import ru.yandex.cup.live.images.domain.color.Color
 import ru.yandex.cup.live.images.domain.instument.Brush
@@ -34,6 +36,7 @@ import ru.yandex.cup.live.images.domain.instument.Square
 import ru.yandex.cup.live.images.domain.instument.StrokeWidth
 import ru.yandex.cup.live.images.domain.instument.Triangle
 import ru.yandex.cup.live.images.domain.instument.toProgress
+import ru.yandex.cup.live.images.ui.ShowColorPicker
 import ru.yandex.cup.live.images.ui.ShowStrokeWidthSeekBar
 
 class MainActivity : AppCompatActivity() {
@@ -90,9 +93,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupLongClickListeners() {
-        binding.pencil.setOnLongClickListener { viewModel.onPencilLongClicked() }
-        binding.brush.setOnLongClickListener { viewModel.onBrushLongClicked() }
-        binding.eraser.setOnLongClickListener { viewModel.onEraserLongClicked() }
+        binding.pencil.setOnLongClickListener { viewModel.onViewLongClicked(R.id.pencil) }
+        binding.brush.setOnLongClickListener { viewModel.onViewLongClicked(R.id.brush) }
+        binding.eraser.setOnLongClickListener { viewModel.onViewLongClicked(R.id.eraser) }
     }
 
     private suspend fun collectInstumentFlow() {
@@ -103,31 +106,28 @@ class MainActivity : AppCompatActivity() {
             binding.eraser.isSelected = instrument is Eraser
             binding.figures.isSelected = instrument is Figure
             binding.colorPicker.isSelected = instrument is ColorPicker
+            if (instrument is ColorPicker) {
+                val colorInt = android.graphics.Color.argb(
+                    instrument.alpha,
+                    instrument.color.red,
+                    instrument.color.green,
+                    instrument.color.blue,
+                )
+                binding.colorPicker.backgroundTintList = ColorStateList.valueOf(colorInt)
+            }
         }
     }
 
     private suspend fun collectEventsFlow() {
         viewModel.eventsFlow.collect { event ->
             when (event) {
-                is ShowStrokeWidthSeekBar -> {
-                    when (event.instrument) {
-                        is Pencil -> showStrokeWidthSeekBar(binding.pencil, event.instrument)
-                        is Brush -> showStrokeWidthSeekBar(binding.brush, event.instrument)
-                        is Eraser -> showStrokeWidthSeekBar(binding.eraser, event.instrument)
-                        is Figure -> when (event.instrument as Figure) {
-                            is Circle -> Unit
-                            is Square -> Unit
-                            is Triangle -> Unit
-                        }
-                        is ColorPicker -> Unit
-                    }
-                }
+                is ShowStrokeWidthSeekBar -> showStrokeWidthSeekBar(event.instrument)
+                is ShowColorPicker -> showColorPicker(event.colorPicker)
             }
         }
     }
 
-    private fun showStrokeWidthSeekBar(view: View, instrument: Instrument) {
-        binding.controlsPopup.removeAllViews()
+    private fun showStrokeWidthSeekBar(instrument: Instrument) {
         val seekBar = ViewStrokeWidthSeekBarBinding.inflate(layoutInflater)
         val seekBarWidth = resources.getDimensionPixelSize(R.dimen.liveimages_stroke_width_seek_bar_width)
         val seekBarHeight = resources.getDimensionPixelSize(R.dimen.liveimages_stroke_width_seek_bar_height)
@@ -144,17 +144,45 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
         })
 
-        binding.controlsPopup.doOnNextLayout {
-            val offset = resources.getDimension(R.dimen.liveimages_offset)
-            binding.controlsPopup.translationY = view.y + binding.drawingInstruments.y - offset - binding.controlsPopup.height
-            binding.overlay.visibility = View.VISIBLE
-            binding.overlay.setOnClickListener {
-                binding.controlsPopup.removeAllViews()
-                binding.overlay.setOnClickListener(null)
-                binding.overlay.visibility = View.INVISIBLE
-            }
-        }
+        binding.controlsPopup.removeAllViews()
         binding.controlsPopup.addView(seekBar.root, seekBarWidth, seekBarHeight)
+        binding.controlsPopup.visibility = View.VISIBLE
+
+        binding.overlay.visibility = View.VISIBLE
+        binding.overlay.setOnClickListener {
+            binding.controlsPopup.visibility = View.INVISIBLE
+            binding.controlsPopup.removeAllViews()
+            binding.overlay.setOnClickListener(null)
+            binding.overlay.visibility = View.INVISIBLE
+        }
+    }
+
+    private fun showColorPicker(colorPicker: ColorPicker) {
+        binding.controlsPopup.removeAllViews()
+        val palette = ViewColorPickerPaletteBinding.inflate(layoutInflater)
+        val paletteWidth = resources.getDimensionPixelSize(R.dimen.liveimages_color_picker_palette_width)
+        val paletteHeight = resources.getDimensionPixelSize(R.dimen.liveimages_color_picker_palette_height)
+
+        binding.controlsPopup.removeAllViews()
+        binding.controlsPopup.addView(palette.root, paletteWidth, paletteHeight)
+        binding.controlsPopup.visibility = View.VISIBLE
+
+        binding.overlay.visibility = View.VISIBLE
+        binding.overlay.setOnClickListener {
+            binding.controlsPopup.visibility = View.INVISIBLE
+            binding.controlsPopup.removeAllViews()
+            binding.overlay.setOnClickListener(null)
+            binding.overlay.visibility = View.INVISIBLE
+            viewModel.onColorPickerDismissed()
+        }
+
+        palette.palette.setOnClickListener {
+            // TODO:SALAM show ARGB seek bars
+        }
+        palette.colorWhite.setOnClickListener { viewModel.onColorPicked(Color.WHITE) }
+        palette.colorRed.setOnClickListener { viewModel.onColorPicked(Color.RED) }
+        palette.colorBlack.setOnClickListener { viewModel.onColorPicked(Color.BLACK) }
+        palette.colorBlue.setOnClickListener { viewModel.onColorPicked(Color.BLUE) }
     }
 
     companion object {

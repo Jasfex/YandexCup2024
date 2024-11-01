@@ -2,6 +2,10 @@
 <resources>
     <dimen name="liveimages_canvas_radius">20dp</dimen>
     <dimen name="liveimages_offset">16dp</dimen>
+    <dimen name="liveimages_color_picker_palette_width">224dp</dimen>
+    <dimen name="liveimages_color_picker_palette_height">32dp</dimen>
+    <dimen name="liveimages_color_picker_palette_icon_size">32dp</dimen>
+    <dimen name="liveimages_color_picker_palette_icon_margin">8dp</dimen>
     <dimen name="liveimages_stroke_width_seek_bar_width">192dp</dimen>
     <dimen name="liveimages_stroke_width_seek_bar_height">20dp</dimen>
     <dimen name="liveimages_stroke_width_seek_bar_thumb_size">20dp</dimen>

@@ -20,10 +20,12 @@ import ru.yandex.cup.live.images.domain.instument.Eraser
 import ru.yandex.cup.live.images.domain.instument.Figure
 import ru.yandex.cup.live.images.domain.instument.Instrument
 import ru.yandex.cup.live.images.domain.instument.Pencil
+import ru.yandex.cup.live.images.domain.instument.STROKE_WIDTH_MAX
 import ru.yandex.cup.live.images.domain.instument.Square
 import ru.yandex.cup.live.images.domain.instument.StrokeWidth
 import ru.yandex.cup.live.images.domain.instument.Triangle
 import ru.yandex.cup.live.images.domain.instument.toStrokeWidth
+import ru.yandex.cup.live.images.ui.ShowColorPicker
 import ru.yandex.cup.live.images.ui.ShowStrokeWidthSeekBar
 import ru.yandex.cup.live.images.ui.UiEvent
 
@@ -35,32 +37,57 @@ class MainViewModel : ViewModel() {
     private val eventsFlowInternal: MutableSharedFlow<UiEvent> = MutableSharedFlow()
     val eventsFlow: SharedFlow<UiEvent> = eventsFlowInternal.asSharedFlow()
 
-    // color & alpha
-
-    private var color: Color = defaultColor
-
-    @IntRange(from = 0, to = 255)
-    private var alpha: Int = DEFAULT_ALPHA
-
     // instruments
 
     private var pencil: Pencil = defaultPencil
     private var brush: Brush = defaultBrush
     private var eraser: Eraser = defaultEraser
+    private var colorPicker: ColorPicker = defaultColorPicker
+
+    fun onColorPickerDismissed() {
+        instrumentFlowInternal.value = null
+    }
+
+    fun onColorPicked(alphaValue: Int, red: Int, green: Int, blue: Int) {
+        val alpha = alphaValue.coerceIn(ALPHA_MIN, ALPHA_MAX)
+        val color = Color(red = red, green = green, blue = blue)
+        instrumentFlowInternal.value = colorPicker.copy(
+            alpha = alpha,
+            color = color,
+        ).also {
+            colorPicker = it
+            pencil = pencil.copy(alpha = alpha, color = color)
+            brush = brush.copy(alpha = alpha, color = color)
+            // TODO:SALAM figure
+        }
+    }
+
+    fun onColorPicked(color: Color) {
+        instrumentFlowInternal.value = colorPicker.copy(color = color).also {
+            colorPicker = it
+            pencil = pencil.copy(color = color)
+            brush = brush.copy(color = color)
+            // TODO:SALAM figure
+        }
+    }
 
     // stroke width
+
     fun onStrokeWidthUpdated(instrument: Instrument, @IntRange(from = 0, to = 1) progress: Int) {
         val strokeWidth = progress.toStrokeWidth()
         instrumentFlowInternal.value = when (instrument) {
             is Pencil -> instrument.copy(strokeWidth = strokeWidth).also {
                 pencil = it
             }
+
             is Brush -> instrument.copy(strokeWidth = strokeWidth).also {
                 brush = it
             }
+
             is Eraser -> instrument.copy(strokeWidth = strokeWidth).also {
                 eraser = it
             }
+
             is ColorPicker -> instrument
             is Figure -> when (val figure = instrument as Figure) {
                 is Circle -> figure.copy(strokeWidth = strokeWidth)
@@ -101,31 +128,30 @@ class MainViewModel : ViewModel() {
     }
 
     fun onColorPickerClicked() {
-        TODO()
+        instrumentFlowInternal.value = if (instrumentFlowInternal.value is ColorPicker) {
+            null
+        } else {
+            viewModelScope.launch {
+                eventsFlowInternal.emit(ShowColorPicker(colorPicker))
+            }
+            colorPicker
+        }
     }
 
     // long clicks
 
-    fun onPencilLongClicked(): Boolean {
+    fun onViewLongClicked(viewId: Int): Boolean {
         viewModelScope.launch {
-            instrumentFlowInternal.value = pencil
-            eventsFlowInternal.emit(ShowStrokeWidthSeekBar(pencil))
-        }
-        return true
-    }
-
-    fun onBrushLongClicked(): Boolean {
-        viewModelScope.launch {
-            instrumentFlowInternal.value = brush
-            eventsFlowInternal.emit(ShowStrokeWidthSeekBar(brush))
-        }
-        return true
-    }
-
-    fun onEraserLongClicked(): Boolean {
-        viewModelScope.launch {
-            instrumentFlowInternal.value = eraser
-            eventsFlowInternal.emit(ShowStrokeWidthSeekBar(eraser))
+            val instrument = when (viewId) {
+                R.id.pencil -> pencil
+                R.id.brush -> brush
+                R.id.eraser -> eraser
+                else -> null
+            }
+            if (instrument != null) {
+                instrumentFlowInternal.value = instrument
+                eventsFlowInternal.emit(ShowStrokeWidthSeekBar(instrument))
+            }
         }
         return true
     }
@@ -160,6 +186,13 @@ class MainViewModel : ViewModel() {
         private val defaultEraser: Eraser = Eraser(
             alpha = ALPHA_MAX,
             strokeWidth = defaultEraserStrokeWidth,
+        )
+
+        // color picker
+        private val defaultColorPicker: ColorPicker = ColorPicker(
+            alpha = DEFAULT_ALPHA,
+            color = defaultColor,
+            strokeWidth = StrokeWidth(dp = STROKE_WIDTH_MAX), // TODO:SALAM remove
         )
     }
 }

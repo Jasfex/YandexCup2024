@@ -6,5 +6,5 @@ import ru.yandex.cup.live.images.domain.color.Colored
 data class ColorPicker(
     override val alpha: Int = 255,
     override val color: Color,
-    override val strokeWidth: StrokeWidth,
+    override val strokeWidth: StrokeWidth, // TODO:SALAM remove
 ) : Instrument(), Colored

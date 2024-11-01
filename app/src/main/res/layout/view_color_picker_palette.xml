@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="@dimen/liveimages_color_picker_palette_width"
+    android:layout_height="@dimen/liveimages_color_picker_palette_height"
+    android:orientation="horizontal">
+
+    <Button
+        android:id="@+id/palette"
+        android:layout_width="@dimen/liveimages_color_picker_palette_icon_size"
+        android:layout_height="@dimen/liveimages_color_picker_palette_icon_size"
+        android:layout_marginEnd="@dimen/liveimages_color_picker_palette_icon_margin"
+        android:background="@drawable/liveimages_palette_32"
+        app:backgroundTint="@color/liveimages_button" />
+
+    <Button
+        android:id="@+id/color_white"
+        android:layout_width="@dimen/liveimages_color_picker_palette_icon_size"
+        android:layout_height="@dimen/liveimages_color_picker_palette_icon_size"
+        android:layout_marginHorizontal="@dimen/liveimages_color_picker_palette_icon_margin"
+        android:background="@drawable/liveimages_color_picker_32"
+        app:backgroundTint="@color/liveimages_white" />
+
+    <Button
+        android:id="@+id/color_red"
+        android:layout_width="@dimen/liveimages_color_picker_palette_icon_size"
+        android:layout_height="@dimen/liveimages_color_picker_palette_icon_size"
+        android:layout_marginHorizontal="@dimen/liveimages_color_picker_palette_icon_margin"
+        android:background="@drawable/liveimages_color_picker_32"
+        app:backgroundTint="@color/liveimages_red" />
+
+
+    <Button
+        android:id="@+id/color_black"
+        android:layout_width="@dimen/liveimages_color_picker_palette_icon_size"
+        android:layout_height="@dimen/liveimages_color_picker_palette_icon_size"
+        android:layout_marginHorizontal="@dimen/liveimages_color_picker_palette_icon_margin"
+        android:background="@drawable/liveimages_color_picker_32"
+        app:backgroundTint="@color/liveimages_black" />
+
+    <Button
+        android:id="@+id/color_blue"
+        android:layout_width="@dimen/liveimages_color_picker_palette_icon_size"
+        android:layout_height="@dimen/liveimages_color_picker_palette_icon_size"
+        android:layout_marginStart="@dimen/liveimages_color_picker_palette_icon_margin"
+        android:background="@drawable/liveimages_color_picker_32"
+        app:backgroundTint="@color/liveimages_blue" />
+</LinearLayout>

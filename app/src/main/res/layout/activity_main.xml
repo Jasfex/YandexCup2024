@@ -176,7 +176,7 @@
             android:layout_height="32dp"
             android:layout_marginHorizontal="8dp"
             android:background="@drawable/liveimages_color_picker_32"
-            android:foreground="@drawable/liveimages_color_picker_foregound"
+            android:foreground="@drawable/liveimages_color_picker_outline_32"
             app:backgroundTint="@color/liveimages_blue" />
     </LinearLayout>
 
@@ -184,14 +184,33 @@
         android:id="@+id/overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="invisible">
+        android:visibility="invisible" />
 
-        <FrameLayout
-            android:id="@+id/controls_popup"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:background="@drawable/liveimages_controls_background"
-            android:padding="16dp" />
-    </FrameLayout>
+    <FrameLayout
+        android:id="@+id/controls_popup_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/liveimages_controls_background"
+        android:padding="16dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@id/controls_popup"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:visibility="visible" />
+
+    <FrameLayout
+        android:id="@+id/controls_popup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/liveimages_controls_background"
+        android:padding="16dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@id/drawing_instruments"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:visibility="visible" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
