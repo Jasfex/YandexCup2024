@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".ui.MainActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/controls"
@@ -181,26 +181,74 @@
     </LinearLayout>
 
     <FrameLayout
-        android:id="@+id/overlay"
+        android:id="@+id/dismiss_popup"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="invisible" />
+        android:layout_height="0dp"
+        android:layout_marginVertical="@dimen/liveimages_offset"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@id/drawing_instruments"
+        app:layout_constraintTop_toBottomOf="@id/controls" />
 
     <FrameLayout
-        android:id="@+id/controls_popup_top"
+        android:id="@+id/palette_popup"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:background="@drawable/liveimages_controls_background"
         android:padding="16dp"
         android:visibility="invisible"
-        app:layout_constraintBottom_toTopOf="@id/controls_popup"
+        app:layout_constraintBottom_toTopOf="@id/color_picker_popup"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:visibility="visible" />
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="@dimen/liveimages_color_picker_palette_width"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            tools:background="@drawable/liveimages_controls_background">
+
+            <TextView
+                android:id="@+id/alpha_title"
+                style="@style/PaletteSeekBarTitle"
+                android:text="@string/liveimages_title_alpha" />
+
+            <SeekBar
+                android:id="@+id/alpha_seek_bar"
+                style="@style/PaletteSeekBar"
+                android:progress="50" />
+
+            <TextView
+                android:id="@+id/red_title"
+                style="@style/PaletteSeekBarTitle"
+                android:text="@string/liveimages_title_red" />
+
+            <SeekBar
+                android:id="@+id/red_seek_bar"
+                style="@style/PaletteSeekBar" />
+
+            <TextView
+                android:id="@+id/green_title"
+                style="@style/PaletteSeekBarTitle"
+                android:text="@string/liveimages_title_green" />
+
+            <SeekBar
+                android:id="@+id/green_seek_bar"
+                style="@style/PaletteSeekBar" />
+
+            <TextView
+                android:id="@+id/blue_title"
+                style="@style/PaletteSeekBarTitle"
+                android:text="@string/liveimages_title_blue" />
+
+            <SeekBar
+                android:id="@+id/blue_seek_bar"
+                style="@style/PaletteSeekBar" />
+        </LinearLayout>
+    </FrameLayout>
 
     <FrameLayout
-        android:id="@+id/controls_popup"
+        android:id="@+id/color_picker_popup"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
@@ -211,6 +259,78 @@
         app:layout_constraintBottom_toTopOf="@id/drawing_instruments"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:visibility="visible" />
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="@dimen/liveimages_color_picker_palette_width"
+            android:layout_height="@dimen/liveimages_color_picker_palette_height"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/palette"
+                android:layout_width="@dimen/liveimages_color_picker_palette_icon_size"
+                android:layout_height="@dimen/liveimages_color_picker_palette_icon_size"
+                android:layout_marginEnd="@dimen/liveimages_color_picker_palette_icon_margin"
+                android:background="@drawable/liveimages_palette_32"
+                app:backgroundTint="@color/liveimages_button" />
+
+            <Button
+                android:id="@+id/color_white"
+                android:layout_width="@dimen/liveimages_color_picker_palette_icon_size"
+                android:layout_height="@dimen/liveimages_color_picker_palette_icon_size"
+                android:layout_marginHorizontal="@dimen/liveimages_color_picker_palette_icon_margin"
+                android:background="@drawable/liveimages_color_picker_32"
+                app:backgroundTint="@color/liveimages_white" />
+
+            <Button
+                android:id="@+id/color_red"
+                android:layout_width="@dimen/liveimages_color_picker_palette_icon_size"
+                android:layout_height="@dimen/liveimages_color_picker_palette_icon_size"
+                android:layout_marginHorizontal="@dimen/liveimages_color_picker_palette_icon_margin"
+                android:background="@drawable/liveimages_color_picker_32"
+                app:backgroundTint="@color/liveimages_red" />
+
+
+            <Button
+                android:id="@+id/color_black"
+                android:layout_width="@dimen/liveimages_color_picker_palette_icon_size"
+                android:layout_height="@dimen/liveimages_color_picker_palette_icon_size"
+                android:layout_marginHorizontal="@dimen/liveimages_color_picker_palette_icon_margin"
+                android:background="@drawable/liveimages_color_picker_32"
+                app:backgroundTint="@color/liveimages_black" />
+
+            <Button
+                android:id="@+id/color_blue"
+                android:layout_width="@dimen/liveimages_color_picker_palette_icon_size"
+                android:layout_height="@dimen/liveimages_color_picker_palette_icon_size"
+                android:layout_marginStart="@dimen/liveimages_color_picker_palette_icon_margin"
+                android:background="@drawable/liveimages_color_picker_32"
+                app:backgroundTint="@color/liveimages_blue" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/stroke_width_popup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/liveimages_controls_background"
+        android:padding="16dp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toTopOf="@id/drawing_instruments"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:visibility="visible">
+
+        <SeekBar
+            android:id="@+id/stroke_width_seek_bar"
+            android:layout_width="@dimen/liveimages_stroke_width_seek_bar_width"
+            android:layout_height="@dimen/liveimages_stroke_width_seek_bar_height"
+            android:progressDrawable="@drawable/liveimages_track"
+            android:splitTrack="false"
+            android:thumb="@drawable/liveimages_thumb"
+            android:thumbOffset="@dimen/liveimages_stroke_width_seek_bar_thumb_offset" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

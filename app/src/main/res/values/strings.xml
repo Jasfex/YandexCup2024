@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Live Images</string>
+    <string name="liveimages_title_alpha">Alpha</string>
+    <string name="liveimages_title_red">Red</string>
+    <string name="liveimages_title_green">Green</string>
+    <string name="liveimages_title_blue">Blue</string>
 </resources>

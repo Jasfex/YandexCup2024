@@ -5,6 +5,7 @@
     <color name="liveimages_white">#FFFFFF</color>
     <color name="liveimages_green">#A8DB10</color>
     <color name="liveimages_gray">#8B8B8B</color>
+    <color name="liveimages_moderate_gray">#5F5F5F</color>
     <color name="liveimages_red">#FF3D00</color>
     <color name="liveimages_blue">#1976D2</color>
 </resources>

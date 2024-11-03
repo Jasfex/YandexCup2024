@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="PaletteSeekBar" parent="Widget.AppCompat.SeekBar">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/liveimages_color_picker_palette_height</item>
+        <item name="android:progressBackgroundTint">@color/liveimages_gray</item>
+        <item name="android:progressTint">@color/liveimages_green</item>
+        <item name="android:splitTrack">false</item>
+        <item name="android:thumbOffset">@dimen/liveimages_stroke_width_seek_bar_thumb_offset</item>
+        <item name="android:thumb">@drawable/liveimages_thumb</item>
+    </style>
+
+    <style name="PaletteSeekBarTitle" parent="Widget.AppCompat.TextView">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:paddingStart">@dimen/liveimages_offset</item>
+        <item name="android:textColor">@color/liveimages_moderate_gray</item>
+        <item name="android:textSize">12sp</item>
+        <item name="fontFamily">sans-serif</item>
+    </style>
+
+</resources>
