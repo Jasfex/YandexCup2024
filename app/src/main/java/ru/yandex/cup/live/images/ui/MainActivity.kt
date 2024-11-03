@@ -55,13 +55,11 @@ class MainActivity : AppCompatActivity() {
         setupStrokeWidthSeekBar()
         setupPaletteSeekBars()
 
-        if (savedInstanceState == null) {
-            subscribeLayer()
-            subscribeInstrument()
-            subscribePopupState()
-            subscribeColor()
-            subscribeStrokeWidth()
-        }
+        subscribeLayer()
+        subscribeInstrument()
+        subscribePopupState()
+        subscribeColor()
+        subscribeStrokeWidth()
     }
 
     override fun onStop() {
@@ -160,9 +158,10 @@ class MainActivity : AppCompatActivity() {
     private fun subscribeLayer() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.layer.collect { layer ->
+                viewModel.uiState.layer.collect { (prevLayer, layer) ->
                     Log.d(TAG, "subscribeLayer(): $layer")
                     binding.canvas.setLayer(layer)
+                    binding.canvas.setPrevLayer(prevLayer)
                 }
             }
         }

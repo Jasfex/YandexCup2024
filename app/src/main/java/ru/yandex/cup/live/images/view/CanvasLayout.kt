@@ -106,6 +106,28 @@ class CanvasLayout(
         invalidate()
     }
 
+    override fun setPrevLayer(prevLayer: UiLayer?) {
+        val newPrevNativePathQueue = prevLayer?.drawingQueue?.map { uiPath ->
+            val _path = Path()
+            for (index in uiPath.coords.indices) {
+                val (x, y, _) = uiPath.coords[index]
+                if (index == 0) {
+                    _path.moveTo(x, y)
+                } else {
+                    _path.lineTo(x, y)
+                }
+            }
+            val color = uiPath.color.copy(alpha = uiPath.color.alpha / 2)
+            val _paint = createPaint(uiPath.instrument, color, uiPath.strokeWidth)
+            _path to _paint
+        }
+        prevNativePathQueue.clear()
+        if (newPrevNativePathQueue != null) {
+            prevNativePathQueue.addAll(newPrevNativePathQueue)
+        }
+        invalidate()
+    }
+
     override fun getLayer(): UiLayer? {
         if (layerIndex == -1) return null
         val queue = uiPathQueue.map { transitiveUiPath ->
@@ -150,6 +172,7 @@ class CanvasLayout(
 
     private var nativePath: Path = Path()
     private val nativePathQueue: LinkedList<Pair<Path, Paint>> = LinkedList()
+    private val prevNativePathQueue: LinkedList<Pair<Path, Paint>> = LinkedList()
 
     private var pointTimestampMs: Long = 0L
 
@@ -272,6 +295,9 @@ class CanvasLayout(
     override fun onDraw(canvas: Canvas) {
         Log.d(TAG, "onDraw()")
         super.onDraw(canvas)
+        for ((_path, _paint) in prevNativePathQueue) {
+            canvas.drawPath(_path, _paint)
+        }
         for ((_path, _paint) in nativePathQueue) {
             canvas.drawPath(_path, _paint)
         }

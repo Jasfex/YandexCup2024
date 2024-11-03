@@ -13,7 +13,7 @@ class MainViewModel : ViewModel() {
 
     private var layerIndex: Int = 0
     private val layers: MutableList<UiLayer> = mutableListOf()
-    private val layerFlow: MutableStateFlow<UiLayer> = MutableStateFlow(UiLayer(layerIndex++, emptyList()))
+    private val layerFlow: MutableStateFlow<Pair<UiLayer?, UiLayer>> = MutableStateFlow(null to UiLayer(layerIndex++, emptyList()))
     private val instrumentFlow: MutableStateFlow<UiInstrument> = MutableStateFlow(DEFAULT_INSTRUMENT)
     private val colorFlow: MutableStateFlow<UiColor> = MutableStateFlow(DEFAULT_COLOR)
     private val strokeWidthFlow: MutableStateFlow<UiStrokeWidth> = MutableStateFlow(DEFAULT_STROKE_WIDTH)
@@ -47,8 +47,9 @@ class MainViewModel : ViewModel() {
 
     fun onDeleteLayerClicked() {
         layers.removeLastOrNull()
-        val topLayer = layers.lastOrNull()
-        layerFlow.value = topLayer ?: UiLayer(layerIndex++, emptyList())
+        val prevLayer = layers.getOrNull(layers.size - 2)
+        val topLayer = layers.getOrNull(layers.size - 1) ?: UiLayer(layerIndex++, emptyList())
+        layerFlow.value = prevLayer to topLayer
     }
 
     fun onAddLayerClicked(layer: UiLayer?) {
@@ -60,10 +61,10 @@ class MainViewModel : ViewModel() {
                 layers.add(layer)
             }
         }
-
-        val newLayer = UiLayer(layerIndex++, emptyList())
-        layers.add(newLayer)
-        layerFlow.value = newLayer
+        val prevLayer = layers.lastOrNull()
+        val topLayer = UiLayer(layerIndex++, emptyList())
+        layers.add(topLayer)
+        layerFlow.value = prevLayer to topLayer
     }
 
     fun onSaveLayer(layer: UiLayer?) {
@@ -74,7 +75,8 @@ class MainViewModel : ViewModel() {
             } else {
                 layers.add(layer)
             }
-            layerFlow.value = layer
+            val prevLayer = layers.getOrNull(layers.size - 2)
+            layerFlow.value = prevLayer to layer
         }
     }
 

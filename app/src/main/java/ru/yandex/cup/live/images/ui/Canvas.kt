@@ -5,6 +5,7 @@ interface Canvas {
     fun setColor(color: UiColor)
     fun setStrokeWidth(strokeWidth: UiStrokeWidth)
     fun setLayer(layer: UiLayer)
+    fun setPrevLayer(prevLayer: UiLayer?)
     fun getLayer(): UiLayer?
 
     fun setActive(active: Boolean)
