@@ -39,8 +39,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         // TODO:SALAM
-        binding.undo.isEnabled = false
-        binding.redo.isEnabled = false
         binding.figures.isEnabled = false
         binding.showLayers.isEnabled = false
         binding.play.isEnabled = false
@@ -60,6 +58,7 @@ class MainActivity : AppCompatActivity() {
         subscribePopupState()
         subscribeColor()
         subscribeStrokeWidth()
+        subscribeHistoryAction()
     }
 
     override fun onStop() {
@@ -85,6 +84,8 @@ class MainActivity : AppCompatActivity() {
         binding.colorBlue.setOnClickListener { viewModel.onColorUpdated(255, 25, 118, 210) }
         binding.deleteLayer.setOnClickListener { viewModel.onDeleteLayerClicked() }
         binding.addLayer.setOnClickListener { viewModel.onAddLayerClicked(binding.canvas.getLayer()) }
+        binding.undo.setOnClickListener { binding.canvas.undo() }
+        binding.redo.setOnClickListener { binding.canvas.redo() }
     }
 
     private fun setupLongClickListeners() {
@@ -234,6 +235,17 @@ class MainActivity : AppCompatActivity() {
                 viewModel.uiState.strokeWidth.collect { strokeWidth ->
                     binding.strokeWidthSeekBar.progress = 100 - strokeWidth.dp.toProgress()
                     binding.canvas.setStrokeWidth(strokeWidth)
+                }
+            }
+        }
+    }
+
+    private fun subscribeHistoryAction() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                binding.canvas.getHistoryActionFlow().collect { (canDoUndo, canDoRedo) ->
+                    binding.undo.isEnabled = canDoUndo
+                    binding.redo.isEnabled = canDoRedo
                 }
             }
         }

@@ -14,7 +14,11 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import ru.yandex.cup.live.images.ui.UiColor
+import ru.yandex.cup.live.images.ui.UiHistoryAction
 import ru.yandex.cup.live.images.ui.UiInstrument
 import ru.yandex.cup.live.images.ui.UiLayer
 import ru.yandex.cup.live.images.ui.UiPath
@@ -41,6 +45,7 @@ class CanvasLayout(
         setLayerType(LAYER_TYPE_SOFTWARE, null);
     }
 
+    private val historyActionFlow: MutableStateFlow<UiHistoryAction> = MutableStateFlow(UiHistoryAction(false, false))
     private var active: Boolean = false
     private var instrument: UiInstrument = UiInstrument.EMPTY
     private var color: UiColor = UiColor(255, 0, 0, 0)
@@ -53,14 +58,13 @@ class CanvasLayout(
 
     override fun setInstrument(instrument: UiInstrument) {
         val newInstrument = when (instrument) {
-            UiInstrument.EMPTY,UiInstrument.PENCIL, UiInstrument.BRUSH, UiInstrument.ERASER -> instrument
+            UiInstrument.EMPTY, UiInstrument.PENCIL, UiInstrument.BRUSH, UiInstrument.ERASER -> instrument
             UiInstrument.FIGURES -> TODO()
             UiInstrument.COLOR_PICKER, UiInstrument.PALETTE -> UiInstrument.EMPTY
         }
         this.instrument = newInstrument
         updatePaint()
     }
-
 
     override fun setColor(color: UiColor) {
         this.color = color
@@ -86,8 +90,10 @@ class CanvasLayout(
                 LinkedList(uiPath.coords),
             )
         }
-        uiPathQueue.clear()
-        uiPathQueue.addAll(newUiPathQueue)
+        undoStack.clear()
+        redoStack.clear()
+        undoStack.addAll(newUiPathQueue)
+        historyActionFlow.value = historyActionFlow.value.copy(undoStack.isNotEmpty(), redoStack.isNotEmpty())
         val newNativePathQueue = layer.drawingQueue.map { uiPath ->
             val _path = Path()
             for (index in uiPath.coords.indices) {
@@ -101,8 +107,9 @@ class CanvasLayout(
             val _paint = createPaint(uiPath.instrument, uiPath.color, uiPath.strokeWidth)
             _path to _paint
         }
-        nativePathQueue.clear()
-        nativePathQueue.addAll(newNativePathQueue)
+        undoNativeStack.clear()
+        redoNativeStack.clear()
+        undoNativeStack.addAll(newNativePathQueue)
         invalidate()
     }
 
@@ -130,7 +137,7 @@ class CanvasLayout(
 
     override fun getLayer(): UiLayer? {
         if (layerIndex == -1) return null
-        val queue = uiPathQueue.map { transitiveUiPath ->
+        val queue = undoStack.map { transitiveUiPath ->
             UiPath(
                 transitiveUiPath.instrument,
                 transitiveUiPath.color,
@@ -168,13 +175,43 @@ class CanvasLayout(
     )
 
     private var uiPath: TransitiveUiPath? = null
-    private val uiPathQueue: LinkedList<TransitiveUiPath> = LinkedList()
+    private val undoStack: LinkedList<TransitiveUiPath> = LinkedList()
+    private val redoStack: LinkedList<TransitiveUiPath> = LinkedList()
 
     private var nativePath: Path = Path()
-    private val nativePathQueue: LinkedList<Pair<Path, Paint>> = LinkedList()
     private val prevNativePathQueue: LinkedList<Pair<Path, Paint>> = LinkedList()
+    private val undoNativeStack: LinkedList<Pair<Path, Paint>> = LinkedList()
+    private val redoNativeStack: LinkedList<Pair<Path, Paint>> = LinkedList()
 
     private var pointTimestampMs: Long = 0L
+
+    override fun undo() {
+        val action = undoStack.removeLastOrNull()
+        if (action != null) {
+            redoStack.addLast(action)
+        }
+        val nativeAction = undoNativeStack.removeLastOrNull()
+        if (nativeAction != null) {
+            redoNativeStack.addLast(nativeAction)
+        }
+        historyActionFlow.value = historyActionFlow.value.copy(undoStack.isNotEmpty(), redoStack.isNotEmpty())
+        invalidate()
+    }
+
+    override fun redo() {
+        val action = redoStack.removeLastOrNull()
+        if (action != null) {
+            undoStack.addLast(action)
+        }
+        val nativeAction = redoNativeStack.removeLastOrNull()
+        if (nativeAction != null) {
+            undoNativeStack.addLast(nativeAction)
+        }
+        historyActionFlow.value = historyActionFlow.value.copy(undoStack.isNotEmpty(), redoStack.isNotEmpty())
+        invalidate()
+    }
+
+    override fun getHistoryActionFlow(): StateFlow<UiHistoryAction> = historyActionFlow.asStateFlow()
 
     // ВАЖНО! Предполагаем, что менять размеры экрана запрещено!
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -276,11 +313,14 @@ class CanvasLayout(
                     pointTimestampMs = newPointTimestampMs
                     uiPath?.coords?.addLast(Triple(pointerCoords1.x, pointerCoords1.y, diffMs))
                     uiPath?.let {
-                        uiPathQueue.addLast(it)
+                        redoStack.clear()
+                        undoStack.addLast(it)
                     }
                     nativePath.lineTo(pointerCoords1.x, pointerCoords1.y)
-                    nativePathQueue.addLast(nativePath to paint)
+                    redoNativeStack.clear()
+                    undoNativeStack.addLast(nativePath to paint)
                     uiPath = null
+                    historyActionFlow.value = historyActionFlow.value.copy(undoStack.isNotEmpty(), redoStack.isNotEmpty())
                 }
                 gestureDrawDetected = false
                 gestureZoomDetected = false
@@ -298,7 +338,7 @@ class CanvasLayout(
         for ((_path, _paint) in prevNativePathQueue) {
             canvas.drawPath(_path, _paint)
         }
-        for ((_path, _paint) in nativePathQueue) {
+        for ((_path, _paint) in undoNativeStack) {
             canvas.drawPath(_path, _paint)
         }
         if (gestureDrawDetected && !nativePath.isEmpty && instrument != UiInstrument.EMPTY) {
