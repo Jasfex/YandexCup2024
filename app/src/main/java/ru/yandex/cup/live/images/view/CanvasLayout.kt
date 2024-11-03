@@ -113,7 +113,7 @@ class CanvasLayout(
         p.style = Paint.Style.STROKE
         p.strokeWidth = strokeWidth
         p.strokeCap = Paint.Cap.SQUARE
-        p.strokeJoin = Paint.Join.ROUND
+        p.strokeJoin = Paint.Join.MITER
     }
 
     private fun createBrushPaint(): Paint = Paint().also { p ->
