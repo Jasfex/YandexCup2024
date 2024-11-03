@@ -15,16 +15,8 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
-import ru.yandex.cup.live.images.domain.color.Color
-import ru.yandex.cup.live.images.domain.instument.Brush
-import ru.yandex.cup.live.images.domain.instument.Circle
-import ru.yandex.cup.live.images.domain.instument.ColorPicker
-import ru.yandex.cup.live.images.domain.instument.Eraser
-import ru.yandex.cup.live.images.domain.instument.Figure
-import ru.yandex.cup.live.images.domain.instument.Instrument
-import ru.yandex.cup.live.images.domain.instument.Pencil
-import ru.yandex.cup.live.images.domain.instument.Square
-import ru.yandex.cup.live.images.domain.instument.Triangle
+import ru.yandex.cup.live.images.ui.UiColor
+import ru.yandex.cup.live.images.ui.UiInstrument
 
 class CanvasLayout(
     context: Context,
@@ -47,9 +39,44 @@ class CanvasLayout(
     }
 
     private var active: Boolean = false
+    private var instrument: UiInstrument = UiInstrument.EMPTY
+    private var color: UiColor = UiColor(255, 0, 0, 0)
+    private var strokeWidth: Float = 3f * resources.displayMetrics.density
 
-    // instrument
-    private var instrument: Instrument? = null
+    override fun setActive(active: Boolean) {
+        this.active = active
+    }
+
+    override fun setInstrument(instrument: UiInstrument) {
+        val newInstrument = when (instrument) {
+            UiInstrument.EMPTY,UiInstrument.PENCIL, UiInstrument.BRUSH, UiInstrument.ERASER -> instrument
+            UiInstrument.FIGURES -> TODO()
+            UiInstrument.COLOR_PICKER, UiInstrument.PALETTE -> UiInstrument.EMPTY
+        }
+        this.instrument = newInstrument
+        updatePaint()
+    }
+
+
+    override fun setColor(color: UiColor) {
+        this.color = color
+        updatePaint()
+    }
+
+    override fun setStrokeWidth(dp: Float) {
+        strokeWidth = dp * resources.displayMetrics.density
+        updatePaint()
+    }
+
+    private fun updatePaint() {
+        paint = when (instrument) {
+            UiInstrument.PENCIL -> createPencilPaint()
+            UiInstrument.BRUSH -> createBrushPaint()
+            UiInstrument.ERASER -> createEraserPaint()
+            UiInstrument.FIGURES -> TODO()
+            UiInstrument.EMPTY, UiInstrument.COLOR_PICKER, UiInstrument.PALETTE -> paint
+        }
+    }
 
     // canvas size
     private val canvasRect = Rect()
@@ -69,15 +96,6 @@ class CanvasLayout(
     private var gestureDrawDetected: Boolean = false
 
     private var paint = Paint()
-    // private val eraserPaint = Paint().apply {
-    //     color = android.graphics.Color.TRANSPARENT
-    //     alpha = 128
-    //     style = Paint.Style.STROKE
-    //     strokeWidth = 3f * context.resources.displayMetrics.density // TODO:SALAM zoom
-    //     strokeCap = Paint.Cap.ROUND
-    //     strokeJoin = Paint.Join.ROUND
-    //     xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
-    // }
 
     // legacy
     private var drawingPath: Path = Path()
@@ -89,54 +107,32 @@ class CanvasLayout(
 
     private val drawQueue: ArrayDeque<DrawingEntry> = ArrayDeque(256)
 
-    override fun setActive(active: Boolean) {
-        this.active = active
+    private fun createPencilPaint(): Paint = Paint().also { p ->
+        p.color = android.graphics.Color.argb(255, color.red, color.green, color.blue)
+        p.alpha = color.alpha
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = strokeWidth
+        p.strokeCap = Paint.Cap.SQUARE
+        p.strokeJoin = Paint.Join.ROUND
     }
 
-    override fun setInstrument(instrument: Instrument?) {
-        this.instrument = instrument
-        when (instrument) {
-            is Brush -> {
-                paint = Paint().apply {
-                    color = android.graphics.Color.rgb(instrument.color.red, instrument.color.green, instrument.color.blue)
-                    alpha = instrument.alpha
-                    style = Paint.Style.STROKE
-                    strokeWidth = instrument.strokeWidth.dp * context.resources.displayMetrics.density // TODO:SALAM zoom
-                    strokeCap = Paint.Cap.ROUND
-                    strokeJoin = Paint.Join.ROUND
-                }
-            }
-            is Pencil -> {
-                paint = Paint().apply {
-                    color = android.graphics.Color.rgb(instrument.color.red, instrument.color.green, instrument.color.blue)
-                    alpha = instrument.alpha
-                    style = Paint.Style.STROKE
-                    strokeWidth = instrument.strokeWidth.dp * context.resources.displayMetrics.density // TODO:SALAM zoom
-                    strokeCap = Paint.Cap.SQUARE
-                    strokeJoin = Paint.Join.ROUND
-                }
-            }
-            is Eraser -> {
-                paint = Paint().apply {
-                    color = android.graphics.Color.TRANSPARENT
-                    alpha = instrument.alpha
-                    style = Paint.Style.STROKE
-                    strokeWidth = instrument.strokeWidth.dp * context.resources.displayMetrics.density // TODO:SALAM zoom
-                    strokeCap = Paint.Cap.ROUND
-                    strokeJoin = Paint.Join.ROUND
-                    xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
-                }
-            }
-            is Figure -> when (instrument as Figure) {
-                is Circle -> TODO()
-                is Square -> TODO()
-                is Triangle -> TODO()
-            }
-            is ColorPicker -> Unit
-            null -> {
-                Log.d(TAG, "setInstrument(): null")
-            }
-        }
+    private fun createBrushPaint(): Paint = Paint().also { p ->
+        p.color = android.graphics.Color.argb(255, color.red, color.green, color.blue)
+        p.alpha = color.alpha
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = strokeWidth
+        p.strokeCap = Paint.Cap.ROUND
+        p.strokeJoin = Paint.Join.ROUND
+    }
+
+    private fun createEraserPaint(): Paint = Paint().also { p ->
+        p.color = android.graphics.Color.TRANSPARENT
+        p.alpha = 255 // color.alpha
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = strokeWidth
+        p.strokeCap = Paint.Cap.ROUND
+        p.strokeJoin = Paint.Join.ROUND
+        p.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
     }
 
     // ВАЖНО! Предполагаем, что менять размеры экрана запрещено!
@@ -158,7 +154,7 @@ class CanvasLayout(
             MotionEvent.ACTION_DOWN -> {
                 Log.d(TAG, "dispatchTouchEvent(): ACTION_DOWN; pointerCount=${ev.pointerCount}")
                 gestureZoomDetected = false
-                if (ev.pointerCount == 1 && instrument != null) {
+                if (ev.pointerCount == 1 && instrument != UiInstrument.EMPTY) {
                     ev.getPointerCoords(0, pointerCoords1)
                     gestureDrawDetected = true
                     Log.d(TAG, "dispatchTouchEvent(): ACTION_DOWN; path started! x=${pointerCoords1.x}; y=${pointerCoords1.y}")

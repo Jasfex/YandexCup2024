@@ -18,7 +18,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import ru.yandex.cup.live.images.R
 import ru.yandex.cup.live.images.databinding.ActivityMainBinding
-import ru.yandex.cup.live.images.domain.color.Color
 import ru.yandex.cup.live.images.domain.instument.STROKE_WIDTH_MAX
 import ru.yandex.cup.live.images.domain.instument.STROKE_WIDTH_MIN
 
@@ -157,7 +156,7 @@ class MainActivity : AppCompatActivity() {
                             instrument == UiInstrument.COLOR_PICKER || instrument == UiInstrument.PALETTE
                         palette.isSelected = instrument == UiInstrument.PALETTE
                     }
-                    // TODO:SALAM set instrument in canvas
+                    binding.canvas.setInstrument(instrument)
                 }
             }
         }
@@ -199,7 +198,7 @@ class MainActivity : AppCompatActivity() {
                     binding.redSeekBar.progress = color.red.fromByteToProgress()
                     binding.greenSeekBar.progress = color.green.fromByteToProgress()
                     binding.blueSeekBar.progress = color.blue.fromByteToProgress()
-                    // TODO:SALAM set color in canvas
+                    binding.canvas.setColor(color)
                 }
             }
         }
@@ -210,18 +209,18 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.strokeWidth.collect { strokeWidth ->
                     binding.strokeWidthSeekBar.progress = 100 - strokeWidth.dp.toProgress()
-                    // TODO:SALAM set strokeWidth in canvas
+                    binding.canvas.setStrokeWidth(strokeWidth.dp)
                 }
             }
         }
     }
 
     private fun Int.scaleAsByte(): Int {
-        return this * 255 / 100
+        return (this * 255 / 100).coerceIn(0, 255)
     }
 
     private fun Int.fromByteToProgress(): Int {
-        return this * 100 / 255
+        return (this * 100 / 255).coerceIn(0, 100)
     }
 
     private fun Float.toProgress(): Int {
