@@ -1,7 +1,6 @@
 package ru.yandex.cup.live.images.view
 
 import android.content.Context
-import android.graphics.BlendMode
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
@@ -9,7 +8,7 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.RectF
-import android.graphics.Xfermode
+import android.os.SystemClock
 import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
@@ -17,6 +16,10 @@ import android.view.View
 import android.widget.FrameLayout
 import ru.yandex.cup.live.images.ui.UiColor
 import ru.yandex.cup.live.images.ui.UiInstrument
+import ru.yandex.cup.live.images.ui.UiLayer
+import ru.yandex.cup.live.images.ui.UiPath
+import ru.yandex.cup.live.images.ui.UiStrokeWidth
+import java.util.LinkedList
 
 class CanvasLayout(
     context: Context,
@@ -28,7 +31,7 @@ class CanvasLayout(
     attrs,
     defStyleAttr,
     defStyleRes,
-), ru.yandex.cup.live.images.domain.Canvas {
+), ru.yandex.cup.live.images.ui.Canvas {
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : this(context, attrs, defStyleAttr, 0)
@@ -41,7 +44,8 @@ class CanvasLayout(
     private var active: Boolean = false
     private var instrument: UiInstrument = UiInstrument.EMPTY
     private var color: UiColor = UiColor(255, 0, 0, 0)
-    private var strokeWidth: Float = 3f * resources.displayMetrics.density
+    private var strokeWidth: UiStrokeWidth = UiStrokeWidth(dp = 3f)
+    private var layerIndex: Int = -1
 
     override fun setActive(active: Boolean) {
         this.active = active
@@ -63,19 +67,56 @@ class CanvasLayout(
         updatePaint()
     }
 
-    override fun setStrokeWidth(dp: Float) {
-        strokeWidth = dp * resources.displayMetrics.density
+    override fun setStrokeWidth(strokeWidth: UiStrokeWidth) {
+        this.strokeWidth = strokeWidth
         updatePaint()
     }
 
     private fun updatePaint() {
-        paint = when (instrument) {
-            UiInstrument.PENCIL -> createPencilPaint()
-            UiInstrument.BRUSH -> createBrushPaint()
-            UiInstrument.ERASER -> createEraserPaint()
-            UiInstrument.FIGURES -> TODO()
-            UiInstrument.EMPTY, UiInstrument.COLOR_PICKER, UiInstrument.PALETTE -> paint
+        paint = createPaint(instrument, color, strokeWidth)
+    }
+
+    override fun setLayer(layer: UiLayer) {
+        layerIndex = layer.index
+        val newUiPathQueue = layer.drawingQueue.map { uiPath ->
+            TransitiveUiPath(
+                uiPath.instrument,
+                uiPath.color,
+                uiPath.strokeWidth,
+                LinkedList(uiPath.coords),
+            )
         }
+        uiPathQueue.clear()
+        uiPathQueue.addAll(newUiPathQueue)
+        val newNativePathQueue = layer.drawingQueue.map { uiPath ->
+            val _path = Path()
+            for (index in uiPath.coords.indices) {
+                val (x, y, _) = uiPath.coords[index]
+                if (index == 0) {
+                    _path.moveTo(x, y)
+                } else {
+                    _path.lineTo(x, y)
+                }
+            }
+            val _paint = createPaint(uiPath.instrument, uiPath.color, uiPath.strokeWidth)
+            _path to _paint
+        }
+        nativePathQueue.clear()
+        nativePathQueue.addAll(newNativePathQueue)
+        invalidate()
+    }
+
+    override fun getLayer(): UiLayer? {
+        if (layerIndex == -1) return null
+        val queue = uiPathQueue.map { transitiveUiPath ->
+            UiPath(
+                transitiveUiPath.instrument,
+                transitiveUiPath.color,
+                transitiveUiPath.strokeWidth,
+                transitiveUiPath.coords.toList(),
+            )
+        }
+        return UiLayer(layerIndex, queue)
     }
 
     // canvas size
@@ -97,43 +138,20 @@ class CanvasLayout(
 
     private var paint = Paint()
 
-    // legacy
-    private var drawingPath: Path = Path()
-
-    data class DrawingEntry(
-        val path: Path,
-        val paint: Paint,
+    data class TransitiveUiPath(
+        val instrument: UiInstrument,
+        val color: UiColor,
+        val strokeWidth: UiStrokeWidth,
+        val coords: LinkedList<Triple<Float, Float, Long>>,
     )
 
-    private val drawQueue: ArrayDeque<DrawingEntry> = ArrayDeque(256)
+    private var uiPath: TransitiveUiPath? = null
+    private val uiPathQueue: LinkedList<TransitiveUiPath> = LinkedList()
 
-    private fun createPencilPaint(): Paint = Paint().also { p ->
-        p.color = android.graphics.Color.argb(255, color.red, color.green, color.blue)
-        p.alpha = color.alpha
-        p.style = Paint.Style.STROKE
-        p.strokeWidth = strokeWidth
-        p.strokeCap = Paint.Cap.SQUARE
-        p.strokeJoin = Paint.Join.MITER
-    }
+    private var nativePath: Path = Path()
+    private val nativePathQueue: LinkedList<Pair<Path, Paint>> = LinkedList()
 
-    private fun createBrushPaint(): Paint = Paint().also { p ->
-        p.color = android.graphics.Color.argb(255, color.red, color.green, color.blue)
-        p.alpha = color.alpha
-        p.style = Paint.Style.STROKE
-        p.strokeWidth = strokeWidth
-        p.strokeCap = Paint.Cap.ROUND
-        p.strokeJoin = Paint.Join.ROUND
-    }
-
-    private fun createEraserPaint(): Paint = Paint().also { p ->
-        p.color = android.graphics.Color.TRANSPARENT
-        p.alpha = 255 // color.alpha
-        p.style = Paint.Style.STROKE
-        p.strokeWidth = strokeWidth
-        p.strokeCap = Paint.Cap.ROUND
-        p.strokeJoin = Paint.Join.ROUND
-        p.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
-    }
+    private var pointTimestampMs: Long = 0L
 
     // ВАЖНО! Предполагаем, что менять размеры экрана запрещено!
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -152,14 +170,20 @@ class CanvasLayout(
 
         when (ev.action) {
             MotionEvent.ACTION_DOWN -> {
-                Log.d(TAG, "dispatchTouchEvent(): ACTION_DOWN; pointerCount=${ev.pointerCount}")
                 gestureZoomDetected = false
                 if (ev.pointerCount == 1 && instrument != UiInstrument.EMPTY) {
                     ev.getPointerCoords(0, pointerCoords1)
                     gestureDrawDetected = true
-                    Log.d(TAG, "dispatchTouchEvent(): ACTION_DOWN; path started! x=${pointerCoords1.x}; y=${pointerCoords1.y}")
-                    drawingPath = Path().also {
-                        it.moveTo(pointerCoords1.x, pointerCoords1.y)
+                    uiPath = TransitiveUiPath(
+                        instrument = instrument,
+                        color = color,
+                        strokeWidth = strokeWidth,
+                        coords = LinkedList(),
+                    )
+                    pointTimestampMs = SystemClock.uptimeMillis()
+                    uiPath?.coords?.addLast(Triple(pointerCoords1.x, pointerCoords1.y, 0))
+                    nativePath = Path().apply {
+                        moveTo(pointerCoords1.x, pointerCoords1.y)
                     }
                 } else {
                     gestureDrawDetected = false
@@ -169,7 +193,6 @@ class CanvasLayout(
             }
 
             MotionEvent.ACTION_MOVE -> {
-                Log.d(TAG, "dispatchTouchEvent(): ACTION_MOVE; pointerCount=${ev.pointerCount}")
                 if (ev.pointerCount == 2) {
                     ev.getPointerCoords(0, pointerCoords1)
                     Log.d(
@@ -209,11 +232,11 @@ class CanvasLayout(
                 }
                 if (ev.pointerCount == 1 && gestureDrawDetected) {
                     ev.getPointerCoords(0, pointerCoords1)
-                    Log.d(
-                        TAG,
-                        "dispatchTouchEvent(): ACTION_MOVE; path added! x=${pointerCoords1.x}; y=${pointerCoords1.y}"
-                    )
-                    drawingPath.lineTo(pointerCoords1.x, pointerCoords1.y)
+                    val newPointTimestampMs = SystemClock.uptimeMillis()
+                    val diffMs = newPointTimestampMs - pointTimestampMs
+                    pointTimestampMs = newPointTimestampMs
+                    uiPath?.coords?.addLast(Triple(pointerCoords1.x, pointerCoords1.y, diffMs))
+                    nativePath.lineTo(pointerCoords1.x, pointerCoords1.y)
                 } else {
                     gestureDrawDetected = false
                 }
@@ -223,20 +246,18 @@ class CanvasLayout(
             }
 
             MotionEvent.ACTION_UP -> {
-                Log.d(TAG, "dispatchTouchEvent(): ACTION_UP; pointerCount=${ev.pointerCount}")
-                // (0 until ev.pointerCount).forEach { index ->
-                //     ev.getPointerCoords(index, pointerCoords)
-                //     Log.d(TAG, "dispatchTouchEvent(): ACTION_UP; pointer[$index]: x=${pointerCoords.x}; y=${pointerCoords.y}")
-                // }
                 if (gestureDrawDetected && ev.pointerCount == 1) {
                     ev.getPointerCoords(0, pointerCoords1)
-                    Log.d(
-                        TAG,
-                        "dispatchTouchEvent(): ACTION_UP; path complete! x=${pointerCoords1.x}; y=${pointerCoords1.y}"
-                    )
-                    drawingPath.lineTo(pointerCoords1.x, pointerCoords1.y)
-                    // TODO:SALAM draw path
-                    drawQueue.addLast(DrawingEntry(drawingPath, paint))
+                    val newPointTimestampMs = SystemClock.uptimeMillis()
+                    val diffMs = newPointTimestampMs - pointTimestampMs
+                    pointTimestampMs = newPointTimestampMs
+                    uiPath?.coords?.addLast(Triple(pointerCoords1.x, pointerCoords1.y, diffMs))
+                    uiPath?.let {
+                        uiPathQueue.addLast(it)
+                    }
+                    nativePath.lineTo(pointerCoords1.x, pointerCoords1.y)
+                    nativePathQueue.addLast(nativePath to paint)
+                    uiPath = null
                 }
                 gestureDrawDetected = false
                 gestureZoomDetected = false
@@ -251,15 +272,11 @@ class CanvasLayout(
     override fun onDraw(canvas: Canvas) {
         Log.d(TAG, "onDraw()")
         super.onDraw(canvas)
-
-        for ((_path, _paint) in drawQueue) {
+        for ((_path, _paint) in nativePathQueue) {
             canvas.drawPath(_path, _paint)
         }
-        // drawQueue.lastOrNull()?.let {
-        //     canvas.drawPath(it.path, eraserPaint)
-        // }
-        if (gestureDrawDetected) {
-            canvas.drawPath(drawingPath, paint)
+        if (gestureDrawDetected && !nativePath.isEmpty && instrument != UiInstrument.EMPTY) {
+            canvas.drawPath(nativePath, paint)
         }
     }
 
@@ -270,6 +287,44 @@ class CanvasLayout(
 
     private fun invalidateParent() {
         (parent as? View)?.invalidate()
+    }
+
+    private fun createPaint(instrument: UiInstrument, color: UiColor, strokeWidth: UiStrokeWidth): Paint {
+        return when (instrument) {
+            UiInstrument.PENCIL -> createPencilPaint(color, strokeWidth)
+            UiInstrument.BRUSH -> createBrushPaint(color, strokeWidth)
+            UiInstrument.ERASER -> createEraserPaint(strokeWidth)
+            UiInstrument.FIGURES -> TODO()
+            UiInstrument.EMPTY, UiInstrument.COLOR_PICKER, UiInstrument.PALETTE -> Paint()
+        }
+    }
+
+    private fun createPencilPaint(color: UiColor, strokeWidth: UiStrokeWidth): Paint = Paint().also { p ->
+        p.color = android.graphics.Color.argb(255, color.red, color.green, color.blue)
+        p.alpha = color.alpha
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = strokeWidth.dp * resources.displayMetrics.density
+        p.strokeCap = Paint.Cap.SQUARE
+        p.strokeJoin = Paint.Join.MITER
+    }
+
+    private fun createBrushPaint(color: UiColor, strokeWidth: UiStrokeWidth): Paint = Paint().also { p ->
+        p.color = android.graphics.Color.argb(255, color.red, color.green, color.blue)
+        p.alpha = color.alpha
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = strokeWidth.dp * resources.displayMetrics.density
+        p.strokeCap = Paint.Cap.ROUND
+        p.strokeJoin = Paint.Join.ROUND
+    }
+
+    private fun createEraserPaint(strokeWidth: UiStrokeWidth): Paint = Paint().also { p ->
+        p.color = android.graphics.Color.TRANSPARENT
+        p.alpha = 255 // color.alpha
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = strokeWidth.dp * resources.displayMetrics.density
+        p.strokeCap = Paint.Cap.ROUND
+        p.strokeJoin = Paint.Join.ROUND
+        p.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
     }
 
     companion object {

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
@@ -38,7 +39,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         // TODO:SALAM
+        binding.undo.isEnabled = false
+        binding.redo.isEnabled = false
         binding.figures.isEnabled = false
+        binding.showLayers.isEnabled = false
+        binding.play.isEnabled = false
+        binding.pause.isEnabled = false
 
         // TODO:SALAM
         binding.canvas.setActive(true)
@@ -50,11 +56,17 @@ class MainActivity : AppCompatActivity() {
         setupPaletteSeekBars()
 
         if (savedInstanceState == null) {
+            subscribeLayer()
             subscribeInstrument()
             subscribePopupState()
             subscribeColor()
             subscribeStrokeWidth()
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        viewModel.onSaveLayer(binding.canvas.getLayer())
     }
 
     @SuppressLint("SourceLockedOrientationActivity")
@@ -73,6 +85,8 @@ class MainActivity : AppCompatActivity() {
         binding.colorRed.setOnClickListener { viewModel.onColorUpdated(255, 255, 61, 0) }
         binding.colorBlack.setOnClickListener { viewModel.onColorUpdated(255, 0, 0, 0) }
         binding.colorBlue.setOnClickListener { viewModel.onColorUpdated(255, 25, 118, 210) }
+        binding.deleteLayer.setOnClickListener { viewModel.onDeleteLayerClicked() }
+        binding.addLayer.setOnClickListener { viewModel.onAddLayerClicked(binding.canvas.getLayer()) }
     }
 
     private fun setupLongClickListeners() {
@@ -143,6 +157,17 @@ class MainActivity : AppCompatActivity() {
         binding.blueSeekBar.setOnSeekBarChangeListener(seekbarsListener)
     }
 
+    private fun subscribeLayer() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.layer.collect { layer ->
+                    Log.d(TAG, "subscribeLayer(): $layer")
+                    binding.canvas.setLayer(layer)
+                }
+            }
+        }
+    }
+
     private fun subscribeInstrument() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -209,7 +234,7 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.strokeWidth.collect { strokeWidth ->
                     binding.strokeWidthSeekBar.progress = 100 - strokeWidth.dp.toProgress()
-                    binding.canvas.setStrokeWidth(strokeWidth.dp)
+                    binding.canvas.setStrokeWidth(strokeWidth)
                 }
             }
         }

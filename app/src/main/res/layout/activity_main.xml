@@ -56,14 +56,14 @@
             app:layout_constraintTop_toTopOf="parent">
 
             <Button
-                android:id="@+id/delete"
+                android:id="@+id/delete_layer"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:background="@drawable/liveimages_delete_32"
                 app:backgroundTint="@color/liveimages_button" />
 
             <Button
-                android:id="@+id/add"
+                android:id="@+id/add_layer"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:layout_marginHorizontal="16dp"
@@ -71,7 +71,7 @@
                 app:backgroundTint="@color/liveimages_button" />
 
             <Button
-                android:id="@+id/list"
+                android:id="@+id/show_layers"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:background="@drawable/liveimages_list_layers_32"
@@ -94,7 +94,6 @@
                 android:layout_height="32dp"
                 android:layout_marginEnd="16dp"
                 android:background="@drawable/liveimages_pause_32"
-                android:enabled="false"
                 app:backgroundTint="@color/liveimages_button" />
 
             <Button
@@ -102,7 +101,6 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:background="@drawable/liveimages_play_32"
-                android:enabled="false"
                 app:backgroundTint="@color/liveimages_button" />
         </LinearLayout>
 

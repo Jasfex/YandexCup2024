@@ -1,10 +1,8 @@
 package ru.yandex.cup.live.images.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import ru.yandex.cup.live.images.R
@@ -13,12 +11,16 @@ import ru.yandex.cup.live.images.domain.instument.STROKE_WIDTH_MIN
 
 class MainViewModel : ViewModel() {
 
+    private var layerIndex: Int = 0
+    private val layers: MutableList<UiLayer> = mutableListOf()
+    private val layerFlow: MutableStateFlow<UiLayer> = MutableStateFlow(UiLayer(layerIndex++, emptyList()))
     private val instrumentFlow: MutableStateFlow<UiInstrument> = MutableStateFlow(DEFAULT_INSTRUMENT)
     private val colorFlow: MutableStateFlow<UiColor> = MutableStateFlow(DEFAULT_COLOR)
     private val strokeWidthFlow: MutableStateFlow<UiStrokeWidth> = MutableStateFlow(DEFAULT_STROKE_WIDTH)
     private val popupStateFlow: MutableStateFlow<UiPopupState> = MutableStateFlow(UiPopupState.EMPTY)
 
     val uiState: UiState = UiState(
+        layer = layerFlow,
         instrument = instrumentFlow,
         color = colorFlow,
         strokeWidth = strokeWidthFlow,
@@ -41,6 +43,39 @@ class MainViewModel : ViewModel() {
                 }
             }
         }.launchIn(viewModelScope)
+    }
+
+    fun onDeleteLayerClicked() {
+        layers.removeLastOrNull()
+        val topLayer = layers.lastOrNull()
+        layerFlow.value = topLayer ?: UiLayer(layerIndex++, emptyList())
+    }
+
+    fun onAddLayerClicked(layer: UiLayer?) {
+        if (layer != null) {
+            val indexToUpdate = layers.indexOfLast { it.index == layer.index }
+            if (indexToUpdate != -1) {
+                layers[indexToUpdate] = layer
+            } else {
+                layers.add(layer)
+            }
+        }
+
+        val newLayer = UiLayer(layerIndex++, emptyList())
+        layers.add(newLayer)
+        layerFlow.value = newLayer
+    }
+
+    fun onSaveLayer(layer: UiLayer?) {
+        if (layer != null) {
+            val indexToUpdate = layers.indexOfLast { it.index == layer.index }
+            if (indexToUpdate != -1) {
+                layers[indexToUpdate] = layer
+            } else {
+                layers.add(layer)
+            }
+            layerFlow.value = layer
+        }
     }
 
     fun onInstrumentClicked(viewId: Int) {
