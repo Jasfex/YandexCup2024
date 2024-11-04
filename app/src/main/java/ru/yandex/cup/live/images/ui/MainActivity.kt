@@ -172,6 +172,13 @@ class MainActivity : AppCompatActivity() {
                     viewModel.uiState.layers,
                     binding.canvas.getHistoryActionFlow()
                 ) { play, layers, history ->
+                    if (play) {
+                        binding.playerSurface.play(layers)
+                    } else {
+                        binding.playerSurface.stop()
+                    }
+                    binding.playerSurface.isVisible = play
+
                     binding.play.isEnabled = !play
                     binding.pause.isEnabled = play
 

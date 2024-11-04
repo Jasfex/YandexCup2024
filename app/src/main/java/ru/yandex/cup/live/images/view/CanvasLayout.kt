@@ -77,7 +77,7 @@ class CanvasLayout(
     }
 
     private fun updatePaint() {
-        paint = createPaint(instrument, color, strokeWidth)
+        paint = PaintUtils.createPaint(resources.displayMetrics.density, instrument, color, strokeWidth)
     }
 
     override fun setLayer(layer: UiLayer?) {
@@ -112,7 +112,7 @@ class CanvasLayout(
                         _path.lineTo(x, y)
                     }
                 }
-                val _paint = createPaint(uiPath.instrument, uiPath.color, uiPath.strokeWidth)
+                val _paint = PaintUtils.createPaint(resources.displayMetrics.density, uiPath.instrument, uiPath.color, uiPath.strokeWidth)
                 _path to _paint
             }
             undoNativeStack.clear()
@@ -134,7 +134,7 @@ class CanvasLayout(
                 }
             }
             val color = uiPath.color.copy(alpha = uiPath.color.alpha / 2)
-            val _paint = createPaint(uiPath.instrument, color, uiPath.strokeWidth)
+            val _paint = PaintUtils.createPaint(resources.displayMetrics.density, uiPath.instrument, color, uiPath.strokeWidth)
             _path to _paint
         }
         prevNativePathQueue.clear()
@@ -361,44 +361,6 @@ class CanvasLayout(
 
     private fun invalidateParent() {
         (parent as? View)?.invalidate()
-    }
-
-    private fun createPaint(instrument: UiInstrument, color: UiColor, strokeWidth: UiStrokeWidth): Paint {
-        return when (instrument) {
-            UiInstrument.PENCIL -> createPencilPaint(color, strokeWidth)
-            UiInstrument.BRUSH -> createBrushPaint(color, strokeWidth)
-            UiInstrument.ERASER -> createEraserPaint(strokeWidth)
-            UiInstrument.FIGURES -> TODO()
-            UiInstrument.EMPTY, UiInstrument.COLOR_PICKER, UiInstrument.PALETTE -> Paint()
-        }
-    }
-
-    private fun createPencilPaint(color: UiColor, strokeWidth: UiStrokeWidth): Paint = Paint().also { p ->
-        p.color = android.graphics.Color.argb(255, color.red, color.green, color.blue)
-        p.alpha = color.alpha
-        p.style = Paint.Style.STROKE
-        p.strokeWidth = strokeWidth.dp * resources.displayMetrics.density
-        p.strokeCap = Paint.Cap.SQUARE
-        p.strokeJoin = Paint.Join.MITER
-    }
-
-    private fun createBrushPaint(color: UiColor, strokeWidth: UiStrokeWidth): Paint = Paint().also { p ->
-        p.color = android.graphics.Color.argb(255, color.red, color.green, color.blue)
-        p.alpha = color.alpha
-        p.style = Paint.Style.STROKE
-        p.strokeWidth = strokeWidth.dp * resources.displayMetrics.density
-        p.strokeCap = Paint.Cap.ROUND
-        p.strokeJoin = Paint.Join.ROUND
-    }
-
-    private fun createEraserPaint(strokeWidth: UiStrokeWidth): Paint = Paint().also { p ->
-        p.color = android.graphics.Color.TRANSPARENT
-        p.alpha = 255 // color.alpha
-        p.style = Paint.Style.STROKE
-        p.strokeWidth = strokeWidth.dp * resources.displayMetrics.density
-        p.strokeCap = Paint.Cap.ROUND
-        p.strokeJoin = Paint.Join.ROUND
-        p.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
     }
 
     companion object {
