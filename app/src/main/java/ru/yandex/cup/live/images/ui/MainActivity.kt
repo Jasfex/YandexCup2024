@@ -42,7 +42,6 @@ class MainActivity : AppCompatActivity() {
 
         // TODO:SALAM
         binding.figures.isEnabled = false
-        binding.showLayers.isEnabled = false
 
         lockPortraitOrientation()
         setupClickListeners()
@@ -86,6 +85,7 @@ class MainActivity : AppCompatActivity() {
             viewModel.onDeleteLayerClicked()
         }
         binding.addLayer.setOnClickListener { viewModel.onAddLayerClicked(binding.canvas.getLayer()) }
+        binding.duplicateLayer.setOnClickListener { viewModel.onDuplicateLayerClicked(binding.canvas.getLayer()) }
         binding.undo.setOnClickListener { binding.canvas.undo() }
         binding.redo.setOnClickListener { binding.canvas.redo() }
         binding.play.setOnClickListener {
@@ -100,9 +100,6 @@ class MainActivity : AppCompatActivity() {
         binding.brush.setOnLongClickListener { viewModel.onInstrumentLongClicked(R.id.brush) }
         binding.eraser.setOnLongClickListener { viewModel.onInstrumentLongClicked(R.id.eraser) }
         binding.deleteLayer.setOnLongClickListener { viewModel.onDeleteLayerLongClicked() }
-        binding.addLayer.setOnLongClickListener {
-            viewModel.onAddLayerLongClicked(binding.canvas.getLayer())
-        }
     }
 
     private fun setupStrokeWidthSeekBar() {
@@ -180,7 +177,7 @@ class MainActivity : AppCompatActivity() {
 
                     binding.deleteLayer.isEnabled = !play && (layers.isNotEmpty() || history.canDoUndo || history.canDoRedo)
                     binding.addLayer.isEnabled = !play
-                    binding.showLayers.isEnabled = false
+                    binding.duplicateLayer.isEnabled = !play && (layers.isNotEmpty() || history.canDoUndo || history.canDoRedo)
                 }.launchIn(this)
             }
         }

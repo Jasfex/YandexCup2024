@@ -71,10 +71,10 @@
                 app:backgroundTint="@color/liveimages_button" />
 
             <Button
-                android:id="@+id/show_layers"
+                android:id="@+id/duplicate_layer"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:background="@drawable/liveimages_list_layers_32"
+                android:background="@drawable/liveimages_duplicate_layer_32"
                 app:backgroundTint="@color/liveimages_button" />
         </LinearLayout>
 

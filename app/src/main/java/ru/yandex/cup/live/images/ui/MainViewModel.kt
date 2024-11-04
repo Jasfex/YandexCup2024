@@ -71,13 +71,15 @@ class MainViewModel : ViewModel() {
         if (indexToUpdate != -1) {
             layers[indexToUpdate] = layer
         } else {
-            layers.add(layer.copy(index = layerIndex++))
+            if (layer.drawingQueue.isNotEmpty()) {
+                layers.add(layer.copy(index = layerIndex++))
+            }
         }
         layers.add(UiLayer(layerIndex++, emptyList()))
         layersFlow.value = layers.toList()
     }
 
-    fun onAddLayerLongClicked(layer: UiLayer): Boolean {
+    fun onDuplicateLayerClicked(layer: UiLayer) {
         val indexToUpdate = layers.indexOfLast { it.index == layer.index }
         if (indexToUpdate != -1) {
             layers[indexToUpdate] = layer
@@ -87,7 +89,6 @@ class MainViewModel : ViewModel() {
         val duplicatedLayer = layer.copy(index = layerIndex++)
         layers.add(duplicatedLayer)
         layersFlow.value = layers.toList()
-        return true
     }
 
     fun onSaveLayer(layer: UiLayer) {
