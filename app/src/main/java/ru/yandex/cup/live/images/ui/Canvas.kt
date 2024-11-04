@@ -6,9 +6,9 @@ interface Canvas {
     fun setInstrument(instrument: UiInstrument)
     fun setColor(color: UiColor)
     fun setStrokeWidth(strokeWidth: UiStrokeWidth)
-    fun setLayer(layer: UiLayer)
+    fun setLayer(layer: UiLayer?)
     fun setPrevLayer(prevLayer: UiLayer?)
-    fun getLayer(): UiLayer?
+    fun getLayer(): UiLayer
 
     fun undo()
     fun redo()

@@ -13,14 +13,16 @@ class MainViewModel : ViewModel() {
 
     private var layerIndex: Int = 0
     private val layers: MutableList<UiLayer> = mutableListOf()
-    private val layerFlow: MutableStateFlow<Pair<UiLayer?, UiLayer>> = MutableStateFlow(null to UiLayer(layerIndex++, emptyList()))
+    private val layersFlow: MutableStateFlow<List<UiLayer>> = MutableStateFlow(emptyList())
     private val instrumentFlow: MutableStateFlow<UiInstrument> = MutableStateFlow(DEFAULT_INSTRUMENT)
     private val colorFlow: MutableStateFlow<UiColor> = MutableStateFlow(DEFAULT_COLOR)
     private val strokeWidthFlow: MutableStateFlow<UiStrokeWidth> = MutableStateFlow(DEFAULT_STROKE_WIDTH)
     private val popupStateFlow: MutableStateFlow<UiPopupState> = MutableStateFlow(UiPopupState.EMPTY)
+    private val playFlow: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
     val uiState: UiState = UiState(
-        layer = layerFlow,
+        play = playFlow,
+        layers = layersFlow,
         instrument = instrumentFlow,
         color = colorFlow,
         strokeWidth = strokeWidthFlow,
@@ -45,39 +47,57 @@ class MainViewModel : ViewModel() {
         }.launchIn(viewModelScope)
     }
 
+    fun onPlayClicked() {
+        playFlow.value = true
+    }
+
+    fun onPauseClicked() {
+        playFlow.value = false
+    }
+
     fun onDeleteLayerClicked() {
         layers.removeLastOrNull()
-        val prevLayer = layers.getOrNull(layers.size - 2)
-        val topLayer = layers.getOrNull(layers.size - 1) ?: UiLayer(layerIndex++, emptyList())
-        layerFlow.value = prevLayer to topLayer
+        layersFlow.value = layers.toList()
     }
 
-    fun onAddLayerClicked(layer: UiLayer?) {
-        if (layer != null) {
-            val indexToUpdate = layers.indexOfLast { it.index == layer.index }
-            if (indexToUpdate != -1) {
-                layers[indexToUpdate] = layer
-            } else {
-                layers.add(layer)
-            }
-        }
-        val prevLayer = layers.lastOrNull()
-        val topLayer = UiLayer(layerIndex++, emptyList())
-        layers.add(topLayer)
-        layerFlow.value = prevLayer to topLayer
+    fun onDeleteLayerLongClicked(): Boolean {
+        layers.clear()
+        layersFlow.value = layers.toList()
+        return true
     }
 
-    fun onSaveLayer(layer: UiLayer?) {
-        if (layer != null) {
-            val indexToUpdate = layers.indexOfLast { it.index == layer.index }
-            if (indexToUpdate != -1) {
-                layers[indexToUpdate] = layer
-            } else {
-                layers.add(layer)
-            }
-            val prevLayer = layers.getOrNull(layers.size - 2)
-            layerFlow.value = prevLayer to layer
+    fun onAddLayerClicked(layer: UiLayer) {
+        val indexToUpdate = layers.indexOfLast { it.index == layer.index }
+        if (indexToUpdate != -1) {
+            layers[indexToUpdate] = layer
+        } else {
+            layers.add(layer.copy(index = layerIndex++))
         }
+        layers.add(UiLayer(layerIndex++, emptyList()))
+        layersFlow.value = layers.toList()
+    }
+
+    fun onAddLayerLongClicked(layer: UiLayer): Boolean {
+        val indexToUpdate = layers.indexOfLast { it.index == layer.index }
+        if (indexToUpdate != -1) {
+            layers[indexToUpdate] = layer
+        } else {
+            layers.add(layer.copy(index = layerIndex++))
+        }
+        val duplicatedLayer = layer.copy(index = layerIndex++)
+        layers.add(duplicatedLayer)
+        layersFlow.value = layers.toList()
+        return true
+    }
+
+    fun onSaveLayer(layer: UiLayer) {
+        val indexToUpdate = layers.indexOfLast { it.index == layer.index }
+        if (indexToUpdate != -1) {
+            layers[indexToUpdate] = layer
+        } else {
+            layers.add(layer.copy(index = layerIndex++))
+        }
+        layersFlow.value = layers.toList()
     }
 
     fun onInstrumentClicked(viewId: Int) {

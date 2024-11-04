@@ -16,6 +16,8 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.launch
 import ru.yandex.cup.live.images.R
 import ru.yandex.cup.live.images.databinding.ActivityMainBinding
@@ -41,11 +43,6 @@ class MainActivity : AppCompatActivity() {
         // TODO:SALAM
         binding.figures.isEnabled = false
         binding.showLayers.isEnabled = false
-        binding.play.isEnabled = false
-        binding.pause.isEnabled = false
-
-        // TODO:SALAM
-        binding.canvas.setActive(true)
 
         lockPortraitOrientation()
         setupClickListeners()
@@ -53,6 +50,7 @@ class MainActivity : AppCompatActivity() {
         setupStrokeWidthSeekBar()
         setupPaletteSeekBars()
 
+        subscribePlayer()
         subscribeLayer()
         subscribeInstrument()
         subscribePopupState()
@@ -82,16 +80,29 @@ class MainActivity : AppCompatActivity() {
         binding.colorRed.setOnClickListener { viewModel.onColorUpdated(255, 255, 61, 0) }
         binding.colorBlack.setOnClickListener { viewModel.onColorUpdated(255, 0, 0, 0) }
         binding.colorBlue.setOnClickListener { viewModel.onColorUpdated(255, 25, 118, 210) }
-        binding.deleteLayer.setOnClickListener { viewModel.onDeleteLayerClicked() }
+        binding.deleteLayer.setOnClickListener {
+            binding.canvas.setLayer(null)
+            binding.canvas.setPrevLayer(null)
+            viewModel.onDeleteLayerClicked()
+        }
         binding.addLayer.setOnClickListener { viewModel.onAddLayerClicked(binding.canvas.getLayer()) }
         binding.undo.setOnClickListener { binding.canvas.undo() }
         binding.redo.setOnClickListener { binding.canvas.redo() }
+        binding.play.setOnClickListener {
+            viewModel.onSaveLayer(binding.canvas.getLayer())
+            viewModel.onPlayClicked()
+        }
+        binding.pause.setOnClickListener { viewModel.onPauseClicked() }
     }
 
     private fun setupLongClickListeners() {
         binding.pencil.setOnLongClickListener { viewModel.onInstrumentLongClicked(R.id.pencil) }
         binding.brush.setOnLongClickListener { viewModel.onInstrumentLongClicked(R.id.brush) }
         binding.eraser.setOnLongClickListener { viewModel.onInstrumentLongClicked(R.id.eraser) }
+        binding.deleteLayer.setOnLongClickListener { viewModel.onDeleteLayerLongClicked() }
+        binding.addLayer.setOnLongClickListener {
+            viewModel.onAddLayerLongClicked(binding.canvas.getLayer())
+        }
     }
 
     private fun setupStrokeWidthSeekBar() {
@@ -156,14 +167,42 @@ class MainActivity : AppCompatActivity() {
         binding.blueSeekBar.setOnSeekBarChangeListener(seekbarsListener)
     }
 
+    private fun subscribePlayer() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(
+                    viewModel.uiState.play,
+                    viewModel.uiState.layers,
+                    binding.canvas.getHistoryActionFlow()
+                ) { play, layers, history ->
+                    binding.play.isEnabled = !play
+                    binding.pause.isEnabled = play
+
+                    binding.deleteLayer.isEnabled = !play && (layers.isNotEmpty() || history.canDoUndo || history.canDoRedo)
+                    binding.addLayer.isEnabled = !play
+                    binding.showLayers.isEnabled = false
+                }.launchIn(this)
+            }
+        }
+    }
+
     private fun subscribeLayer() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.layer.collect { (prevLayer, layer) ->
-                    Log.d(TAG, "subscribeLayer(): $layer")
-                    binding.canvas.setLayer(layer)
-                    binding.canvas.setPrevLayer(prevLayer)
-                }
+                viewModel.uiState.layers.combine(viewModel.uiState.play) { layers, play ->
+                    Log.d(TAG, "subscribeLayer(): $play, $layers")
+                    if (play) {
+                        binding.canvas.setActive(false)
+                        binding.canvas.setLayer(null)
+                        binding.canvas.setPrevLayer(null)
+                    } else {
+                        binding.canvas.setActive(true)
+                        val layer = layers.getOrNull(layers.size - 1)
+                        binding.canvas.setLayer(layer)
+                        val prevLayer = layers.getOrNull(layers.size - 2)
+                        binding.canvas.setPrevLayer(prevLayer)
+                    }
+                }.launchIn(this)
             }
         }
     }
@@ -171,18 +210,25 @@ class MainActivity : AppCompatActivity() {
     private fun subscribeInstrument() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.instrument.collect { instrument ->
-                    with(binding) {
-                        pencil.isSelected = instrument == UiInstrument.PENCIL
-                        brush.isSelected = instrument == UiInstrument.BRUSH
-                        eraser.isSelected = instrument == UiInstrument.ERASER
-                        figures.isSelected = instrument == UiInstrument.FIGURES
-                        colorPicker.isSelected =
-                            instrument == UiInstrument.COLOR_PICKER || instrument == UiInstrument.PALETTE
-                        palette.isSelected = instrument == UiInstrument.PALETTE
+                viewModel.uiState.instrument.combine(viewModel.uiState.play) { instrument, play ->
+                    binding.pencil.isEnabled = !play
+                    binding.brush.isEnabled = !play
+                    binding.eraser.isEnabled = !play
+                    binding.figures.isEnabled = false
+                    binding.colorPicker.isEnabled = !play
+                    if (!play) {
+                        with(binding) {
+                            pencil.isSelected = instrument == UiInstrument.PENCIL
+                            brush.isSelected = instrument == UiInstrument.BRUSH
+                            eraser.isSelected = instrument == UiInstrument.ERASER
+                            figures.isSelected = instrument == UiInstrument.FIGURES
+                            colorPicker.isSelected =
+                                instrument == UiInstrument.COLOR_PICKER || instrument == UiInstrument.PALETTE
+                            palette.isSelected = instrument == UiInstrument.PALETTE
+                        }
+                        binding.canvas.setInstrument(instrument)
                     }
-                    binding.canvas.setInstrument(instrument)
-                }
+                }.launchIn(this)
             }
         }
     }
@@ -190,20 +236,27 @@ class MainActivity : AppCompatActivity() {
     private fun subscribePopupState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.popupState.collect { popupState ->
-                    if (popupState == UiPopupState.EMPTY) {
-                        binding.dismissPopup.setOnClickListener(null)
+                viewModel.uiState.popupState.combine(viewModel.uiState.play) { popupState, play ->
+                    if (play) {
                         binding.dismissPopup.visibility = View.INVISIBLE
+                        binding.dismissPopup.setOnClickListener(null)
+                        binding.strokeWidthPopup.visibility = View.INVISIBLE
+                        binding.colorPickerPopup.visibility = View.INVISIBLE
+                        binding.palettePopup.visibility = View.INVISIBLE
                     } else {
-                        binding.dismissPopup.setOnClickListener { viewModel.onDismissPopupClicked() }
-                        binding.dismissPopup.visibility = View.VISIBLE
+                        if (popupState == UiPopupState.EMPTY) {
+                            binding.dismissPopup.setOnClickListener(null)
+                            binding.dismissPopup.visibility = View.INVISIBLE
+                        } else {
+                            binding.dismissPopup.setOnClickListener { viewModel.onDismissPopupClicked() }
+                            binding.dismissPopup.visibility = View.VISIBLE
+                        }
+                        binding.strokeWidthPopup.isVisible = popupState == UiPopupState.STROKE_WIDTH
+                        binding.colorPickerPopup.isVisible =
+                            popupState == UiPopupState.COLOR_PICKER || popupState == UiPopupState.COLOR_PICKER_AND_PALETTE
+                        binding.palettePopup.isVisible = popupState == UiPopupState.COLOR_PICKER_AND_PALETTE
                     }
-                    binding.strokeWidthPopup.isVisible = popupState == UiPopupState.STROKE_WIDTH
-                    binding.colorPickerPopup.isVisible =
-                        popupState == UiPopupState.COLOR_PICKER || popupState == UiPopupState.COLOR_PICKER_AND_PALETTE
-                    binding.palettePopup.isVisible = popupState == UiPopupState.COLOR_PICKER_AND_PALETTE
-                    // TODO:SALAM figures popup
-                }
+                }.launchIn(this)
             }
         }
     }
@@ -243,10 +296,10 @@ class MainActivity : AppCompatActivity() {
     private fun subscribeHistoryAction() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                binding.canvas.getHistoryActionFlow().collect { (canDoUndo, canDoRedo) ->
-                    binding.undo.isEnabled = canDoUndo
-                    binding.redo.isEnabled = canDoRedo
-                }
+                binding.canvas.getHistoryActionFlow().combine(viewModel.uiState.play) { (canDoUndo, canDoRedo), play ->
+                    binding.undo.isEnabled = canDoUndo && !play
+                    binding.redo.isEnabled = canDoRedo && !play
+                }.launchIn(this)
             }
         }
     }

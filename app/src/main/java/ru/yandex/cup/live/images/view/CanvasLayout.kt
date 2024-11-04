@@ -80,36 +80,45 @@ class CanvasLayout(
         paint = createPaint(instrument, color, strokeWidth)
     }
 
-    override fun setLayer(layer: UiLayer) {
-        layerIndex = layer.index
-        val newUiPathQueue = layer.drawingQueue.map { uiPath ->
-            TransitiveUiPath(
-                uiPath.instrument,
-                uiPath.color,
-                uiPath.strokeWidth,
-                LinkedList(uiPath.coords),
-            )
-        }
-        undoStack.clear()
-        redoStack.clear()
-        undoStack.addAll(newUiPathQueue)
-        historyActionFlow.value = historyActionFlow.value.copy(undoStack.isNotEmpty(), redoStack.isNotEmpty())
-        val newNativePathQueue = layer.drawingQueue.map { uiPath ->
-            val _path = Path()
-            for (index in uiPath.coords.indices) {
-                val (x, y, _) = uiPath.coords[index]
-                if (index == 0) {
-                    _path.moveTo(x, y)
-                } else {
-                    _path.lineTo(x, y)
-                }
+    override fun setLayer(layer: UiLayer?) {
+        if (layer == null) {
+            layerIndex = -1
+            undoStack.clear()
+            redoStack.clear()
+            undoNativeStack.clear()
+            redoNativeStack.clear()
+            historyActionFlow.value = historyActionFlow.value.copy(undoStack.isNotEmpty(), redoStack.isNotEmpty())
+        } else {
+            layerIndex = layer.index
+            val newUiPathQueue = layer.drawingQueue.map { uiPath ->
+                TransitiveUiPath(
+                    uiPath.instrument,
+                    uiPath.color,
+                    uiPath.strokeWidth,
+                    LinkedList(uiPath.coords),
+                )
             }
-            val _paint = createPaint(uiPath.instrument, uiPath.color, uiPath.strokeWidth)
-            _path to _paint
+            undoStack.clear()
+            redoStack.clear()
+            undoStack.addAll(newUiPathQueue)
+            historyActionFlow.value = historyActionFlow.value.copy(undoStack.isNotEmpty(), redoStack.isNotEmpty())
+            val newNativePathQueue = layer.drawingQueue.map { uiPath ->
+                val _path = Path()
+                for (index in uiPath.coords.indices) {
+                    val (x, y, _) = uiPath.coords[index]
+                    if (index == 0) {
+                        _path.moveTo(x, y)
+                    } else {
+                        _path.lineTo(x, y)
+                    }
+                }
+                val _paint = createPaint(uiPath.instrument, uiPath.color, uiPath.strokeWidth)
+                _path to _paint
+            }
+            undoNativeStack.clear()
+            redoNativeStack.clear()
+            undoNativeStack.addAll(newNativePathQueue)
         }
-        undoNativeStack.clear()
-        redoNativeStack.clear()
-        undoNativeStack.addAll(newNativePathQueue)
         invalidate()
     }
 
@@ -135,8 +144,7 @@ class CanvasLayout(
         invalidate()
     }
 
-    override fun getLayer(): UiLayer? {
-        if (layerIndex == -1) return null
+    override fun getLayer(): UiLayer {
         val queue = undoStack.map { transitiveUiPath ->
             UiPath(
                 transitiveUiPath.instrument,
