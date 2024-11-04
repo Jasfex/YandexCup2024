@@ -7,6 +7,7 @@ import android.graphics.Path
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
+import android.os.SystemClock
 import android.util.AttributeSet
 import android.widget.FrameLayout
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +22,7 @@ import kotlinx.coroutines.launch
 import ru.yandex.cup.live.images.ui.UiLayer
 import java.util.LinkedList
 import java.util.NoSuchElementException
+import java.util.concurrent.ConcurrentLinkedDeque
 
 class PlayerSurfaceView(
     context: Context,
@@ -44,17 +46,16 @@ class PlayerSurfaceView(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
-    @Volatile
-    private var drawingPaths: List<Pair<Path, Paint>> = emptyList()
+    private val drawingPaths: ConcurrentLinkedDeque<Pair<Path, Paint>> = ConcurrentLinkedDeque()
 
     override fun play(layers: List<UiLayer>) {
-        drawingPaths = emptyList()
+        drawingPaths.clear()
         job?.cancel()
         job = scope.launch {
             while (isActive) {
                 for (layer in layers) {
                     val _drawingPaths = mutableListOf<Pair<Path, Paint>>()
-                    drawingPaths = _drawingPaths
+                    drawingPaths.addAll(_drawingPaths)
                     for (path in layer.drawingQueue) {
                         ensureActive()
                         val paint = PaintUtils.createPaint(
@@ -70,13 +71,12 @@ class PlayerSurfaceView(
                             (1 until path.coords.size).forEach { index ->
                                 val (x1, y1, durationMs) = path.coords[index]
                                 nativePath.lineTo(x1, y1)
-                                while (drawingPaths.isNotEmpty()) {
-                                    delay(0L)
-                                }
                                 delay(durationMs)
                                 _drawingPaths.add(Path(nativePath) to paint)
-                                drawingPaths = _drawingPaths
-                                postInvalidate()
+                                if (drawingPaths.isEmpty()) {
+                                    drawingPaths.addAll(_drawingPaths)
+                                    postInvalidate()
+                                }
                             }
                         }
                     }
@@ -87,7 +87,7 @@ class PlayerSurfaceView(
     }
 
     override fun stop() {
-        drawingPaths = emptyList()
+        drawingPaths.clear()
         job?.cancel()
         job = null
     }
@@ -100,6 +100,6 @@ class PlayerSurfaceView(
                 canvas.drawPath(path, paint)
             }
         }
-        drawingPaths = emptyList()
+        drawingPaths.clear()
     }
 }
