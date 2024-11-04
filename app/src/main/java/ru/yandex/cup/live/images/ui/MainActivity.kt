@@ -81,7 +81,7 @@ class MainActivity : AppCompatActivity() {
         binding.colorBlue.setOnClickListener { viewModel.onColorUpdated(255, 25, 118, 210) }
         binding.deleteLayer.setOnClickListener {
             binding.canvas.setLayer(null)
-            binding.canvas.setPrevLayer(null)
+            binding.prevCanvas.setPrevLayer(null)
             viewModel.onDeleteLayerClicked()
         }
         binding.addLayer.setOnClickListener { viewModel.onAddLayerClicked(binding.canvas.getLayer()) }
@@ -191,13 +191,13 @@ class MainActivity : AppCompatActivity() {
                     if (play) {
                         binding.canvas.setActive(false)
                         binding.canvas.setLayer(null)
-                        binding.canvas.setPrevLayer(null)
+                        binding.prevCanvas.setPrevLayer(null)
                     } else {
                         binding.canvas.setActive(true)
                         val layer = layers.getOrNull(layers.size - 1)
                         binding.canvas.setLayer(layer)
                         val prevLayer = layers.getOrNull(layers.size - 2)
-                        binding.canvas.setPrevLayer(prevLayer)
+                        binding.prevCanvas.setPrevLayer(prevLayer)
                     }
                 }.launchIn(this)
             }

@@ -11,7 +11,7 @@ import ru.yandex.cup.live.images.domain.instument.STROKE_WIDTH_MIN
 
 class MainViewModel : ViewModel() {
 
-    private var layerIndex: Int = 0
+    private var layerIndex: Long = 0L
     private val layers: MutableList<UiLayer> = mutableListOf()
     private val layersFlow: MutableStateFlow<List<UiLayer>> = MutableStateFlow(emptyList())
     private val instrumentFlow: MutableStateFlow<UiInstrument> = MutableStateFlow(DEFAULT_INSTRUMENT)

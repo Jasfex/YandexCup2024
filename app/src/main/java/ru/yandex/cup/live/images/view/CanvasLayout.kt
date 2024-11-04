@@ -50,7 +50,7 @@ class CanvasLayout(
     private var instrument: UiInstrument = UiInstrument.EMPTY
     private var color: UiColor = UiColor(255, 0, 0, 0)
     private var strokeWidth: UiStrokeWidth = UiStrokeWidth(dp = 3f)
-    private var layerIndex: Int = -1
+    private var layerIndex: Long = -1L
 
     override fun setActive(active: Boolean) {
         this.active = active
